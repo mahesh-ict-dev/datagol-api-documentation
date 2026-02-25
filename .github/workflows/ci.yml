@@ -23,3 +23,5 @@ jobs:
 
       - name: Validate Mintlify docs
         run: npm run validate
+        env:
+          CI: true
