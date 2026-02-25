@@ -7,6 +7,19 @@
     "light": "#3b82f6",
     "dark": "#1e40af"
   },
+  "api": {
+    "baseUrl": "https://be.datagol.ai"
+  },
+  "fonts": {
+    "heading": {
+      "family": "Plus Jakarta Sans",
+      "weight": 600
+    },
+    "body": {
+      "family": "Plus Jakarta Sans",
+      "weight": 400
+    }
+  },
   "navigation": {
     "tabs": [
       {

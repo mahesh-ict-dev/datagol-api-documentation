@@ -5,7 +5,7 @@ info:
   description: ''
 servers:
   - url: https://be.datagol.ai
-  - url: https://be.datagol.ai
+    description: DataGOL API server
 paths:
   /idp/api/v1/user/login:
     post:
@@ -177,7 +177,7 @@ paths:
         **Endpoint:**
 
 
-        [https://{base_url}/idp/api/v1/user/login](https://null)
+        [https://be.datagol.ai/idp/api/v1/user/login](https://be.datagol.ai)
 
 
         **Method:** `POST`
@@ -385,7 +385,7 @@ paths:
 
 
         **Endpoint:**
-        [https://{base_url}/idp/api/v1/company/serviceAccount](https://null)
+        [https://be.datagol.ai/idp/api/v1/company/serviceAccount](https://be.datagol.ai)
 
 
         **Method:** `POST`
@@ -599,7 +599,7 @@ paths:
 
 
         **Endpoint:**
-        [https://{base_url}/idp/api/v1/company/serviceAccount/{serviceAccountId}/token/reset?neverExpires=true](https://null)  
+        [https://be.datagol.ai/idp/api/v1/company/serviceAccount/{serviceAccountId}/token/reset?neverExpires=true](https://be.datagol.ai)  
 
         **Method:** POST  
 
@@ -772,10 +772,10 @@ paths:
 
 
         **Endpoint:**
-        https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/bulkUsers
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/bulkUsers
 
 
-        **Method: POST**
+        **Method:** POST
 
 
         **Auth Required**
@@ -997,7 +997,7 @@ paths:
 
 
         **Endpoint:**
-        [https://{base_url}/noCo/api/v2/workspaces](https://be.datagol.ai/noCo/api/v2/workspaces)  
+        [https://be.datagol.ai/noCo/api/v2/workspaces](https://be.datagol.ai/noCo/api/v2/workspaces)  
 
         **Method:** POST  
 
@@ -1161,7 +1161,7 @@ paths:
         **Endpoint:**
 
 
-        https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/extraction/schema/generate
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/schema/generate
 
 
         **Method:** POST  
@@ -1356,7 +1356,7 @@ paths:
         **Endpoint:**
 
 
-        https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/extraction/advanced/test  
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/advanced/test  
 
         **Auth Required:** Yes (`x-auth-token`)
 
@@ -1769,7 +1769,7 @@ paths:
         **Endpoint:**
 
 
-        https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/extraction
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction
 
 
         **Method :** POST  
@@ -2311,7 +2311,7 @@ paths:
         **Endpoint:**
 
 
-        https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/extraction/{extraction_id}
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/{extraction_id}
 
 
         **Method :** PUT  
@@ -2750,7 +2750,7 @@ paths:
         **Endpoint:**
 
 
-        https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}
 
 
         **Method:** DELETE  
@@ -2926,7 +2926,7 @@ paths:
         **Endpoint:**
 
 
-        https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/extraction/{element_type}/{element_id}
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/{element_type}/{element_id}
 
 
         **Method:** GET  
@@ -3138,7 +3138,7 @@ paths:
 
 
         **Endpoint:**
-        https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/extraction/{extraction_id}/{element_type}/{element_id}/run?extractOnlyNew=true
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/{extraction_id}/{element_type}/{element_id}/run?extractOnlyNew=true
 
 
         **Method :** POST  
@@ -4039,7 +4039,7 @@ paths:
         **Endpoint:**
 
 
-        https://{base_url}/noCo/api/v1/requestLog/status/{requestId}
+        https://be.datagol.ai/noCo/api/v1/requestLog/status/{requestId}
 
 
         **Method:** GET  
@@ -4345,7 +4345,7 @@ paths:
 
         **Endpoint:**  
 
-        [https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/tables?isIncludeColumns=true](https://null)
+        [https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables?isIncludeColumns=true](https://be.datagol.ai)
 
 
         **Method:** GET  
@@ -4530,7 +4530,7 @@ paths:
 
         **Endpoint:**  
 
-        [https://{base_url}/noCo/api/v2/workspaces/{workspace_id}/tables/{table_id}](https://null)
+        [https://be.datagol.ai/noCo/api/v2/workspaces/{workspace_id}/tables/{table_id}](https://be.datagol.ai)
 
 
         **Method:** GET  
@@ -4721,7 +4721,7 @@ paths:
 
         **Endpoint:**  
 
-        [https://{base_url}/noCo/api/v2/workspaces/{workspace_id}/tables/{table_id}/data/external](https://null)
+        [https://be.datagol.ai/noCo/api/v2/workspaces/{workspace_id}/tables/{table_id}/data/external](https://be.datagol.ai)
 
 
         **Method:** POST  
@@ -4941,7 +4941,7 @@ paths:
 
         **Endpoint:**  
 
-        [https://{base_url}/noCo/api/v2/workspaces/{workspace_id}/tables/{table_id}/column](https://null)
+        [https://be.datagol.ai/noCo/api/v2/workspaces/{workspace_id}/tables/{table_id}/column](https://be.datagol.ai)
 
 
         **Method:** POST
@@ -5175,7 +5175,7 @@ paths:
 
         **Endpoint:**  
 
-        [https://{base_url}/noCo/api/v2/workspaces/{workspace_id}/tables/{table_id}/rows](https://null)
+        [https://be.datagol.ai/noCo/api/v2/workspaces/{workspace_id}/tables/{table_id}/rows](https://be.datagol.ai)
 
 
         **Method:** POST
@@ -5376,7 +5376,7 @@ paths:
 
 
         `DELETE
-        https://{{base_url}}/noCo/api/v2/workspaces/{{workspace_id}}/tables/{{table_id}}/rows`
+        https://{be.datagol.ai}/noCo/api/v2/workspaces/{{workspace_id}}/tables/{{table_id}}/rows`
 
 
         ## Authentication / Required headers
@@ -6012,7 +6012,7 @@ paths:
 
         **Endpoint:**  
 
-        https://{base_url}/noCo/api/v2/workspaces/{workspace_id}/folder/upload
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspace_id}/folder/upload
 
 
         **Method:** POST
@@ -6212,7 +6212,7 @@ paths:
         Retrieve all folders in a workspace.
 
         **Endpoint:**  
-        https://{base_url}/noCo/api/v2/workspaces/{workspace_id}/folder
+        https://be.datagol.ai/noCo/api/v2/workspaces/{workspace_id}/folder
 
         **Method:** GET
 

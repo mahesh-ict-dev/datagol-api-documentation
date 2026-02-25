@@ -1,0 +1,44 @@
+/* DataGOL API Docs – custom polish */
+
+/* Softer, more readable API reference sections */
+[data-theme="light"] .api-reference,
+[data-theme="dark"] .api-reference {
+  --card-radius: 12px;
+  --block-spacing: 1.25rem;
+}
+
+/* Endpoint URL and request info – clearer hierarchy */
+a[href^="https://"] {
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+/* Method badges (GET, POST, etc.) – slightly larger and clearer */
+.badge-get, .badge-post, .badge-put, .badge-delete, .badge-patch {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.25em 0.5em;
+  border-radius: 6px;
+}
+
+/* Sidebar nav – clearer active state and hover */
+nav a[aria-current="page"] {
+  font-weight: 600;
+}
+
+/* Main content max-width for readability */
+main .content {
+  max-width: 52rem;
+}
+
+/* Subtle section spacing in API reference */
+h2 + p, h3 + p {
+  margin-top: 0.5rem;
+}
+
+/* Request/response blocks */
+pre, .code-block {
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
