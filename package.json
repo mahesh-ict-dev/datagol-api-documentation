@@ -1,0 +1,13 @@
+{
+  "name": "datagol-api-docs",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "cd docs && npx mint dev",
+    "validate": "cd docs && npx mint validate",
+    "build": "cd docs && npx mint build"
+  },
+  "devDependencies": {
+    "mint": "latest"
+  }
+}
