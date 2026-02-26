@@ -3,6 +3,17 @@ info:
   title: DataGOL APIs
   version: 1.0.0
   description: ''
+tags:
+  - name: Getting Started
+    description: Login and service account
+  - name: Workspaces
+    description: Workspace management
+  - name: AI Extraction
+    description: Extract structured data from content
+  - name: WorkBook
+    description: Tables, columns, rows, and workbook operations
+  - name: Knowledge Graph
+    description: Create and query knowledge graphs
 servers:
   - url: https://be.datagol.ai
     description: DataGOL API server
@@ -1122,7 +1133,6 @@ paths:
               schema:
                 type: string
               example: gzip
-      x-hidden: true
       tags:
         - AI Extraction
       description: >-
@@ -1310,7 +1320,6 @@ paths:
               schema:
                 type: string
               example: gzip
-      x-hidden: true
       tags:
         - AI Extraction
       description: >-
@@ -1717,7 +1726,6 @@ paths:
               schema:
                 type: string
               example: gzip
-      x-hidden: true
       tags:
         - AI Extraction
       description: >-
@@ -2252,7 +2260,6 @@ paths:
               schema:
                 type: string
               example: gzip
-      x-hidden: true
       tags:
         - AI Extraction
       description: >-
@@ -2684,7 +2691,6 @@ paths:
           description: Success
         '204':
           description: No content
-      x-hidden: true
       tags:
         - AI Extraction
       description: >-
@@ -2852,7 +2858,6 @@ paths:
               schema:
                 type: string
               example: gzip
-      x-hidden: true
       tags:
         - AI Extraction
       description: >-
@@ -3059,7 +3064,6 @@ paths:
               schema:
                 type: string
               example: gzip
-      x-hidden: true
       tags:
         - AI Extraction
       description: >-
@@ -3951,7 +3955,6 @@ paths:
               schema:
                 type: string
               example: gzip
-      x-hidden: true
       tags:
         - AI Extraction
       description: >-
@@ -5835,7 +5838,6 @@ paths:
               schema:
                 type: string
               example: gzip
-      x-hidden: true
       tags:
         - Knowledge Graph
       description: >-
@@ -6030,7 +6032,6 @@ paths:
               schema:
                 type: string
               example: gzip
-      x-hidden: true
       tags:
         - Knowledge Graph
       description: |-
@@ -6170,7 +6171,6 @@ paths:
               schema:
                 type: boolean
               example: 'true'
-      x-hidden: true
       tags:
         - Knowledge Graph
       description: >-
@@ -6328,7 +6328,6 @@ paths:
               schema:
                 type: string
               example: a4d0214e-919f-48d3-8d7b-0e83032885c7
-      x-hidden: true
       tags:
         - Knowledge Graph
       description: >-
@@ -6481,7 +6480,6 @@ paths:
               schema:
                 type: string
               example: cba71fa1-bd1b-41c0-9dc7-72b06ca66252
-      x-hidden: true
       tags:
         - Knowledge Graph
       description: >-

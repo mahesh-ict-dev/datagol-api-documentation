@@ -5,32 +5,40 @@ description: Use AI Extraction and Knowledge Graph APIs to process content and b
 
 DataGOL exposes **AI Extraction** and **Knowledge Graph** APIs so you can extract structured data from documents and manage knowledge graphs in your workspace.
 
-## AI Extraction
+**Where to find them:** Open the **API Reference** tab (top navigation). In the left sidebar you’ll see groups **AI Extraction** and **Knowledge Graph** — expand those to see and try each endpoint.
 
-AI Extraction lets you define schemas and run extraction jobs on workspace content (files, folders). Use it for:
+## AI Extraction APIs
 
-- **Schema generation** — Generate extraction schemas from prompts.
-- **Advanced extraction** — Test and run extractions with custom schemas.
-- **Extraction configs** — Create, update, and manage extraction configurations (standard or advanced).
-- **Runs** — Trigger extraction on elements and poll for status.
+Base path: `https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/...`
 
-**In the API Reference:** Open the **API Reference** tab and use the **AI Extraction** group for endpoints such as:
+| Method | Endpoint | Summary |
+| --- | --- | --- |
+| POST | `/noCo/api/v2/workspaces/{workspaceId}/extraction/schema/generate` | Generate Schema for Advanced Extraction |
+| POST | `/noCo/api/v2/workspaces/{workspaceId}/extraction/advanced/test` | Test API for Advanced Extraction |
+| POST | `/noCo/api/v2/workspaces/{workspaceId}/extraction` | Create Extraction |
+| PUT | `/noCo/api/v2/workspaces/{workspaceId}/extraction/{extraction_id}` | Update Extraction |
+| DELETE | `/noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}` | Delete Extraction |
+| GET | `/noCo/api/v2/workspaces/{workspace_id}/extraction/{element_type}/{element_id}` | Get Extractions |
+| POST | `/noCo/api/v2/workspaces/{workspace_id}/extraction/{extraction_id}/{element_type}/{element_id}/run` | Trigger Extraction |
+| GET | `/noCo/api/v1/requestLog/status/{request_id}` | Poll Status |
 
-- Generate Schema for Advanced Extraction  
-- Test API for Advanced Extraction  
-- Create / Update / Delete Extraction  
-- Trigger Extraction Run  
-- Poll Status  
+## Knowledge Graph APIs
 
-## Knowledge Graph
+Base path: `https://be.datagol.ai/ai/api/v2/knowledge-graph...`
 
-Knowledge Graph APIs let you create and query knowledge graphs in a workspace.
+| Method | Endpoint | Summary |
+| --- | --- | --- |
+| POST | `/ai/api/v2/knowledge-graph/create` | Create Knowledge Graph |
+| GET | `/ai/api/v2/knowledge-graph/status` | Get Knowledge Graph Status |
+| GET | `/ai/api/v2/knowledge-graph` | Get Knowledge Graph |
 
-- **Create Knowledge Graph** — Start a new knowledge graph job.
-- **Get Knowledge Graph Status** — Check job status.
-- **Get Knowledge Graph** — Retrieve the generated graph.
+## AI Extraction (overview)
 
-**In the API Reference:** Open the **API Reference** tab and use the **Knowledge Graph** group for these endpoints.
+AI Extraction lets you define schemas and run extraction jobs on workspace content (files, folders): schema generation from prompts, advanced extraction with custom schemas, and create/update/delete extraction configs. Use **Trigger Extraction** to run and **Poll Status** to check progress.
+
+## Knowledge Graph (overview)
+
+Knowledge Graph APIs let you create and query knowledge graphs: **Create Knowledge Graph** to start a job, **Get Knowledge Graph Status** to check status, and **Get Knowledge Graph** to retrieve the graph.
 
 ## Authentication
 
