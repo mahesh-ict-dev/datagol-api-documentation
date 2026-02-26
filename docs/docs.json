@@ -10,6 +10,9 @@
   "api": {
     "baseUrl": "https://be.datagol.ai"
   },
+  "seo": {
+    "indexing": "all"
+  },
   "fonts": {
     "heading": {
       "family": "Plus Jakarta Sans",
@@ -25,7 +28,7 @@
       {
         "tab": "Documentation",
         "icon": "book-open",
-        "pages": ["introduction", "api-reference", "workbook-mcp"]
+        "pages": ["introduction", "api-reference", "ai-extraction-knowledge-graph", "workbook-mcp"]
       },
       {
         "tab": "API Reference",

@@ -3992,6 +3992,13 @@ paths:
     post:
       summary: Generate AI Column
       parameters:
+        - name: x-auth-token
+          in: header
+          required: true
+          description: Workbook API auth token
+          schema:
+            type: string
+          example: '<token>'
         - name: sec-ch-ua-platform
           in: header
           schema:
@@ -4026,18 +4033,7 @@ paths:
           description: No content
       tags:
         - WorkBook
-      description: >-
-        Generated from cURL: curl
-        'https://be.datagol.ai/noCo/api/v2/workspaces/e00b2c6b-9068-4399-b695-10ad0ad3c09c/tables/b0183acc-236d-4b5b-879e-75f5cb03b013/column'
-        \
-          -H 'sec-ch-ua-platform: "macOS"' \
-          -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJtZmFfc3RhdHVzIjoiTk9UX1JFUVVJUkVEIiwic3ViIjoiYW51cEBpbm5jcmV0ZWNoLmNvbSIsInBlcm1pc3Npb25zIjpbIlZJRVdfREFUQVNPVVJDRSIsIlZJRVdfVVNFUlMiLCJDUkVBVEVfQ09QSUxPVCIsIkVESVRfQ09QSUxPVCIsIkRFTEVURV9DT1BJTE9UIiwiVklFV19DT1BJTE9UIiwiRURJVF9MQUtFSE9VU0UiLCJWSUVXX0NPTk5FQ1RPUlMiLCJDUkVBVEVfUElQRUxJTkUiLCJDUkVBVEVfREFUQVNPVVJDRSIsIkVESVRfVVNFUlMiLCJWSUVXX0FMRVJUUyIsIkVESVRfUElQRUxJTkUiLCJFRElUX0NPTk5FQ1RPUlMiLCJERUxFVEVfQ09OTkVDVE9SUyIsIlZJRVdfUElQRUxJTkUiLCJERUxFVEVfVVNFUlMiLCJWSUVXX0pPQlMiLCJDUkVBVEVfQ09OTkVDVE9SUyIsIkNSRUFURV9VU0VSUyIsIkVESVRfREFUQVNPVVJDRSIsIkRFTEVURV9EQVRBU09VUkNFIiwiVklFV19MQUtFSE9VU0UiLCJDUkVBVEVfTEFLRUhPVVNFIiwiREVMRVRFX0xBS0VIT1VTRSIsIkRFTEVURV9QSVBFTElORSIsIkFTU0lHTl9ST0xFUyJdLCJyb2xlcyI6WyJBQ0NPVU5UX0FETUlOIiwiTEFLRUhPVVNFX0FETUlOIiwiQ09OTkVDVE9SX0FETUlOIiwiQ09QSUxPVEhVQl9BRE1JTiJdLCJleHAiOjE3NzIzNzUyODQsImlhdCI6MTc3MjAxNTI4NH0.f34XXr9HawU8kyjy6kNho6d-iTL0uqj0ZyLy-MEZdetdKhvSOGegBsRXHEEbSoA8jDO4-_zpTONpMUU_aVrBFw' \
-          -H 'Referer: https://app.datagol.ai/' \
-          -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36' \
-          -H 'sec-ch-ua: "Not:A-Brand";v="99", "Google Chrome";v="145", "Chromium";v="145"' \
-          -H 'Content-Type: application/json' \
-          -H 'sec-ch-ua-mobile: ?0' \
-          --data-raw '{"uiDataType":"SINGLE_LINE_TEXT","description":"","uiMetadata":{"title":"col"},"required":false,"settings":{"aiSettings":{"enabled":true,"prompt":"Extract from name and create a col","model":"gpt-4o-mini","webAccess":false}},"name":"col"}'
+      description: Creates a new column in a workspace table. When `settings.aiSettings.enabled` is true, the column is an AI-generated column that auto-fills values from the prompt and row data.
       requestBody:
         content:
           application/json:
