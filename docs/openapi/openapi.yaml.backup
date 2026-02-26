@@ -5,22 +5,18 @@ info:
   description: ''
 tags:
   - name: Getting Started
-    description: Authentication, login, and service account management
+    description: Login and service account
   - name: Workspaces
-    description: Workspace CRUD and user management
+    description: Workspace management
   - name: AI Extraction
-    description: Schema generation, extraction configs, and run triggers
+    description: Extract structured data from content
   - name: WorkBook
-    description: Tables (workbooks), columns, rows, and data operations
+    description: Tables, columns, rows, and workbook operations
   - name: Knowledge Graph
-    description: File upload, folder listing, and knowledge graph APIs
+    description: Create and query knowledge graphs
 servers:
-  - url: 'https://be.datagol.ai'
-    description: DataGOL backend API
-  - url: 'https://kg.datagol.ai'
-    description: Knowledge graph service
-  - url: 'https://ai.datagol.ai'
-    description: AI services
+  - url: https://be.datagol.ai
+    description: DataGOL API server
 paths:
   /idp/api/v1/user/login:
     post:
