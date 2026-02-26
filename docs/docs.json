@@ -25,7 +25,7 @@
       {
         "tab": "Documentation",
         "icon": "book-open",
-        "pages": ["introduction", "api-reference"]
+        "pages": ["introduction", "api-reference", "workbook-mcp"]
       },
       {
         "tab": "API Reference",

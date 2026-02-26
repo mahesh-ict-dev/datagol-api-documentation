@@ -1,0 +1,255 @@
+---
+title: Workbook MCP — Tools And Connection Reference
+description: Public reference for the DataGOL Workbook MCP server, its tools, and how to connect.
+---
+
+## Overview
+
+The **DataGOL Workbook MCP** server exposes a single DataGOL workbook (table) over the **Model Context Protocol (MCP)**.
+Clients such as AI assistants, Cursor, or custom applications connect via **Streamable HTTP** and can read or write the workbook using the tools listed below.
+
+Always call **`get_table_schema`** first to get table metadata and column information before using other tools.
+
+## MCP tools — quick reference
+
+| # | Tool                   | Purpose                                                                                          |
+| - | ---------------------- | ------------------------------------------------------------------------------------------------ |
+| 1 | `get_table_schema`     | Returns table and column metadata. **Call this first.**                                         |
+| 2 | `query_table_data`     | Fetches rows with filtering, sorting, and pagination (simple data fetch).                       |
+| 3 | `execute_query`        | Runs complex SQL (aggregations, `GROUP BY`, `JOIN`s).                                           |
+| 4 | `add_row`              | Adds one row with given cell values.                                                            |
+| 5 | `update_row`           | Updates an existing row by `row_id`.                                                            |
+| 6 | `add_row_comment`      | Adds a comment on a row.                                                                        |
+| 7 | `create_column`        | Creates a new column (**DYNAMIC** tables only).                                                 |
+| 8 | `create_formula_column`| Creates a formula column (SQL expression).                                                      |
+| 9 | `create_ai_generate_column` | Creates an AI Generate column; optional bulk run.                                          |
+|10 | `run_ai_generate_bulk` | Runs AI generate on many rows (optionally filtered).                                           |
+|11 | `run_ai_generate_row`  | Runs AI generate on a single row.                                                               |
+|12 | `update_column`        | Updates column name, title, description, type, formula, or options.                             |
+|13 | `update_table`         | Updates table title, description, or delete guard.                                              |
+|14 | `delete_column`        | Deletes a column (when allowed by schema).                                                      |
+
+## How to connect
+
+- **Endpoint**: `https://<host>:<port>/mcp` (Streamable HTTP)
+- **Required**: `workspace_id`, `table_id`, `token` (query string or headers)
+
+**Query string example**
+
+```text
+https://<host>:<port>/mcp?workspace_id=<uuid>&table_id=<uuid>&token=<token>
+```
+
+**Headers (alternative)**
+
+- `X-Datagol-Workspace-Id`
+- `X-Datagol-Table-Id`
+- `X-Datagol-Token`
+- Optional: `X-Datagol-Host`
+
+**Health checks (no auth)**  
+`GET /health` and `GET /ready` return `200` with:
+
+```json
+{ "status": "ok" }
+```
+
+## Schema first
+
+`get_table_schema` returns:
+
+- **`dataProvider`** — Backend (for example, PostgreSQL, Snowflake); use for the correct SQL / `WHERE` dialect.
+- **`tableType`** — `STATIC` (add rows, update column title only) or `DYNAMIC` (add / update columns).
+- **`connectionName`** — Table name to use in raw SQL for `execute_query`.
+- **`primaryKeyColumnName`** — Column whose value is the row ID; use as `row_id` in `update_row`, `add_row_comment`, `run_ai_generate_row`.
+- **`columns`** — IDs, names, types, and flags (for example, `isDataEditable`, `isDeletable`).
+
+Use this information to call other tools correctly.
+
+## Data fetching — `query_table_data` vs `execute_query`
+
+| Use case                                   | Tool               | Notes                                                       |
+| ------------------------------------------ | ------------------ | ----------------------------------------------------------- |
+| Simple filtering, sort, paginate           | `query_table_data` | `where_clause`, `sort_column`, `page_number`, `page_size`. |
+| Aggregations (`SUM`, `COUNT`, `AVG`, …)    | `execute_query`    | Raw SQL with `GROUP BY`.                                   |
+| Complex SQL (`JOIN`s, subqueries, etc.)    | `execute_query`    | Full SQL support; maximum 100 rows.                        |
+
+## Tool details
+
+### 1. `get_table_schema`
+
+Returns the full schema and metadata for the workbook table.
+
+- **Parameters**: _None_
+- **Returns**: Table metadata, columns (`id`, `name`, `uiDataType`, `uiMetadata`, flags), `dataProvider`, `tableType`, `connectionName`, `primaryKeyColumnName`.
+
+### 2. `query_table_data`
+
+Fetches table data with optional filtering, sorting, and pagination.  
+Use for simple data fetch (list rows with filters). Each row includes `id` (`row_id`) — use it with `update_row`, `add_row_comment`, or `run_ai_generate_row`.
+
+- **Parameters**:
+  - `page_number` (optional, default `1`)
+  - `page_size` (optional, default `100`, max `500`)
+  - `where_clause` (optional)
+  - `sort_column` (optional)
+  - `sort_direction` (optional, default `"ASC"`)
+  - `last_cursor_values` (optional, from previous response for next page)
+- **Returns**: `table_name`, `columns`, `total_records`, `page_number`, `total_pages`, `is_last_page`, `rows` (each with `id` + `cellValues`), `last_cursor_values`.
+
+`where_clause`: Use column names from the schema. Examples: `total_amount > 1000`, `status IN ('A','B')`.  
+Do **not** include the `WHERE` keyword.
+
+### 3. `execute_query`
+
+Executes raw SQL for complex queries only:
+
+- Aggregations (`SUM`, `COUNT`, `AVG`, `MIN`, `MAX`)
+- `GROUP BY`
+- `JOIN`s and subqueries
+
+Do **not** use for simple filtering — use `query_table_data` instead.
+
+- **Parameters**:
+  - `sql` (required) — SQL string. Use `connectionName` from the schema as the table name.
+- **Returns**: Query result; at most 100 rows (`LIMIT 100` added if not present).
+
+### 4. `add_row`
+
+Adds one row to the table.
+
+- **Parameters**:
+  - `cell_values` (required) — Object mapping column name (from schema) to value, for example:
+
+    ```json
+    { "name": "Acme", "amount": 100 }
+    ```
+
+    Use only editable columns (`isDataEditable`).
+
+- **Returns**: Created row or error.
+
+### 5. `update_row`
+
+Updates an existing row. The `row_id` is:
+
+- The value of the `primaryKeyColumnName` column (from `get_table_schema`), or
+- The `id` in rows returned by `query_table_data`.
+
+- **Parameters**:
+  - `row_id` (required) — Row ID (primary key value).
+  - `cell_values` (required) — Object mapping column name to new values; only include columns to update.
+- **Returns**: Updated row: `{ id, cellValues, cellValuesByColumnId }`.
+
+### 6. `add_row_comment`
+
+Adds a comment on a row.
+
+- **Parameters**:
+  - `row_id` (required) — Row ID (primary key value).
+  - `comment` (required) — Comment text.
+- **Returns**: API response or error.
+
+### 7. `create_column`
+
+Creates a new column. **DYNAMIC** tables only.
+
+- **Parameters**:
+  - `name` (required)
+  - `title` (required)
+  - `data_type` (optional, default `SINGLE_LINE_TEXT`)
+  - `options` (optional, for `SINGLE_SELECT` / `MULTI_SELECT`)
+- **Returns**: Created column or error.
+
+Supported `data_type` values:
+
+`DATE`, `NUMBER`, `ATTACHMENT`, `USER`, `SINGLE_LINE_TEXT`, `CHECKBOX`, `EMAIL`, `PHONE_NUMBER`, `URL`, `SINGLE_SELECT`, `DECIMAL`, `DURATION`, `PERCENTAGE`, `CURRENCY`, `LONG_TEXT`, `MULTI_SELECT`, `JSON`, `FORMULA`, `ID`, `AI_GENERATE`.
+
+### 8. `create_formula_column`
+
+Creates a formula column (SQL expression). **DYNAMIC** tables only.
+
+- **Parameters**:
+  - `name` (required)
+  - `title` (required)
+  - `formula` (required)
+  - `formula_type` (optional, default `"SQL"`)
+- **Returns**: Created column or error.
+
+### 9. `create_ai_generate_column`
+
+Creates an AI Generate column; optionally runs AI generate on all rows. **DYNAMIC** tables only.
+
+- **Parameters**:
+  - `name` (required)
+  - `title` (required)
+  - `prompt` (required)
+  - `model` (optional, default `gpt-4o-mini`)
+  - `web_access` (optional, default `false`)
+  - `run_after_create` (optional, default `false`)
+- **Returns**: Created column; optionally `runAiGenerateResult`.
+
+### 10. `run_ai_generate_bulk`
+
+Runs AI generate on many rows for an `AI_GENERATE` column.  
+By default processes all rows; optionally filter with `where_clause`. For a single row, use `run_ai_generate_row` instead.
+
+- **Parameters**:
+  - `column_id` (required) — UUID from `get_table_schema` (`columns[].id` for the `AI_GENERATE` column).
+  - `select_all` (optional, default `true`)
+  - `where_clause` (optional)
+  - `filter_params` (optional)
+- **Returns**: Bulk run result or error.
+
+### 11. `run_ai_generate_row`
+
+Runs AI generate on a single row for an `AI_GENERATE` column.  
+For many rows, use `run_ai_generate_bulk` instead.
+
+- **Parameters**:
+  - `column_id` (required) — UUID from `get_table_schema`.
+  - `row_id` (required) — Row ID (primary key value).
+- **Returns**: Updated row: `{ id, cellValues, cellValuesByColumnId }`.
+
+### 12. `update_column`
+
+Updates an existing column. Only change what the schema allows (for example `isMetaDataEditable`, `isDataTypeEditable`).
+
+- **Parameters**:
+  - `column_id` (required)
+  - `name`, `title`, `description`, `data_type`, `formula`, `options` (all optional)
+- **Returns**: Updated column or error.
+
+For `SINGLE_SELECT` / `MULTI_SELECT`, `options` are merged by value; existing options are not removed.
+
+### 13. `update_table`
+
+Updates the workbook table (title, description, delete guard).
+
+- **Parameters**:
+  - `title` (optional)
+  - `description` (optional)
+  - `delete_guard` (optional)
+- **Returns**: Updated table or error.
+
+### 14. `delete_column`
+
+Deletes a column. Only when the schema marks it as deletable (`isDeletable`).
+
+- **Parameters**:
+  - `column_id` (required) — from `get_table_schema`.
+- **Returns**: Success or error.
+
+## Row ID reference
+
+The `row_id` used by `update_row`, `add_row_comment`, and `run_ai_generate_row` is:
+
+- The value of the `primaryKeyColumnName` column (from `get_table_schema`), or
+- The `id` field in each row returned by `query_table_data`.
+
+## Summary
+
+- **Total tools**: 14 — schema, query / execute, add / update row, add comment, create / update / delete column, formula column, AI generate column + bulk + row, update table.
+- **Protocol**: MCP over Streamable HTTP at `/mcp` with `workspace_id`, `table_id`, and `token`.
+- **Best practice**: Call `get_table_schema` first. Use `query_table_data` for simple filtering; use `execute_query` for aggregations and complex SQL. Use `primaryKeyColumnName` or row `id` for row-level operations.
+
