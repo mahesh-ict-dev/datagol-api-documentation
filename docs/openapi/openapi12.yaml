@@ -26,67 +26,78 @@ paths:
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: origin
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -230,7 +241,8 @@ paths:
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: authorization
           in: header
@@ -243,61 +255,71 @@ paths:
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -437,13 +459,15 @@ paths:
           in: query
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: 'true'
         - name: accept-language
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: authorization
           in: header
@@ -456,61 +480,71 @@ paths:
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -1029,19 +1063,22 @@ paths:
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: Referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://testing.datagol.ai/
         - name: User-Agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -1049,19 +1086,22 @@ paths:
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: x-auth-token
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: c2cccdf27ebaaefeffeedee0ca4cceb9333b4f31e676e4531cc208b9725bc330
       responses:
         '200':
@@ -2916,73 +2956,85 @@ paths:
           in: query
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: 'true'
         - name: accept-language
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: origin
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://testing.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://testing.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -4091,73 +4143,85 @@ paths:
           in: query
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: 'true'
         - name: accept-language
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: origin
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://workbook.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://workbook.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -4459,67 +4523,78 @@ paths:
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: origin
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://workbook.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://workbook.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -4527,7 +4602,8 @@ paths:
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: c2cccdf27ebaaefeffeedee0ca4cceb9333b4f31e676e4531cc208b9725bc330
       responses:
         '200':
@@ -5870,13 +5946,6 @@ paths:
 
         | files | file | Yes | File(s) to upload. Use multipart/form-data.
         Supports multiple files. |
-    parameters:
-      - name: workspace_id
-        in: path
-        required: true
-        schema:
-          type: string
-        example: '{{workspace_id}}'
   /noCo/api/v2/workspaces/{workspace_id}/folder:
     get:
       summary: Get files in Workspace
@@ -5885,67 +5954,78 @@ paths:
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: origin
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -6062,79 +6142,92 @@ paths:
           in: query
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '{{file_id}}'
         - name: workspace_id
           in: query
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '{{workspaceId}}'
         - name: accept-language
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: origin
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -6221,73 +6314,85 @@ paths:
           in: query
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '{{file_id}}'
         - name: accept-language
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: origin
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36
@@ -6363,79 +6468,92 @@ paths:
           in: query
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '{{file_id}}'
         - name: limit
           in: query
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '250'
         - name: accept-language
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: en-US,en;q=0.9
         - name: origin
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai
         - name: priority
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: u=1, i
         - name: referer
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: https://app.datagol.ai/
         - name: sec-ch-ua
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"'
         - name: sec-ch-ua-mobile
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '?0'
         - name: sec-ch-ua-platform
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: '"macOS"'
         - name: sec-fetch-dest
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: empty
         - name: sec-fetch-mode
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: cors
         - name: sec-fetch-site
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: same-site
         - name: user-agent
           in: header
           required: false
           deprecated: false
-          schema: {}
+          schema:
+            type: string
           example: >-
             Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36
             (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36

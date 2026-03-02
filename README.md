@@ -64,9 +64,22 @@ git config user.email "your-email@example.com"
 
 - **Mintlify deploy**: Connect this repository to [Mintlify](https://mintlify.com). Mintlify will build and publish the docs on each push to the connected branch (no extra CI step needed for deploy).
 
-- To add deploy via GitHub Actions (e.g. to GitHub Pages or another host), add a job that runs `npm run build` and uploads the `docs/out` (or Mintlify output) artifact.
+## GitHub Pages (live API docs)
+
+This repo deploys the **API reference** (OpenAPI spec) to GitHub Pages via the **Deploy to GitHub Pages** workflow. After you enable it once, every push to `main` updates the site.
+
+**Live URL (after first deploy):**  
+**https://mahesh-ict-dev.github.io/datagol-api-documentation/**
+
+### One-time setup to enable GitHub Pages
+
+1. In your repo on GitHub go to **Settings** → **Pages**.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. Push the `deploy-gh-pages.yml` workflow (or re-run the workflow). The first run will deploy the site; the link above will work once the run succeeds.
+
+The deployed site is a Redoc-based API reference built from `docs/openapi/openapi.yaml`. For the full Mintlify site (tabs, intro, etc.) use `npm run dev` locally or connect the repo to [Mintlify](https://mintlify.com).
 
 ## Deploy
 
-Connect this repo to [Mintlify](https://mintlify.com); deployments run on push. You can also run `npm run build` and deploy the generated output to any static host.
-# datagol-api-documentation
+- **GitHub Pages**: Automatic on push to `main` (see above). Free, no account needed.
+- **Mintlify**: Connect this repo at [Mintlify](https://mintlify.com) for their full hosted docs experience.
