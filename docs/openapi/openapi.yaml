@@ -136,7 +136,7 @@ paths:
           in: header
           schema:
             type: string
-          example: 7b6c69bd3431489e9bc79405e08fc37bb26813dcaf8ba5067808173b49282866
+          example: <token>
       responses:
         '200':
           description: create Workspace
@@ -182,7 +182,7 @@ paths:
           in: header
           schema:
             type: string
-          example: 7b6c69bd3431489e9bc79405e08fc37bb26813dcaf8ba5067808173b49282866
+          example: <token>
       responses:
         '200':
           description: Get All Workspaces
@@ -1031,9 +1031,10 @@ paths:
       parameters:
         - name: x-auth-token
           in: header
+          required: true
           schema:
             type: string
-          example: 7b6c69bd3431489e9bc79405e08fc37bb26813dcaf8ba5067808173b49282866
+          example: <token>
       responses:
         '200':
           description: Create Workbooks
@@ -1049,8 +1050,7 @@ paths:
         \ | \u2705 Yes | Identifier of the workspace where the workbook will be created\
         \ |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires **Bearer JWT Token**\n\
         \n```\nAuthorization: x-auth-token <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
-        \ Required Permissions\n\nUser must have:\n\n- `CREATE_DATASOURCE` or equivalent\
-        \ table creation permission\n    \n- Workspace-level write access\n    \n\n\
+        \ Required Permissions\n\nUser must have:\n\n- `CREATOR` or EDITOR permission\
         ---\n\n## 6\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- |\
         \ --- |\n| Authorization | \u2705 Yes |\n| Content-Type: application/json\
         \ | \u2705 Yes |\n\n---\n\n## 7\uFE0F\u20E3 Request Body Schema\n\n```\n{\
@@ -1191,6 +1191,7 @@ paths:
           example: 'true'
         - name: x-auth-token
           in: header
+          required: true
           schema:
             type: string
           example: <token>
@@ -1199,37 +1200,7 @@ paths:
           description: Get tables in workspace
       tags:
         - WorkBook
-      description: "### 1\uFE0F\u20E3 Overview\n\n**Purpose:** This endpoint retrieves\
-        \ a list of all tables (Workbooks) associated with a specific workspace. It\
-        \ is primarily used to populate workspace dashboards or to fetch structural\
-        \ metadata for data synchronization tasks.\n\n### 2\uFE0F\u20E3 Endpoint\n\
-        \nHTTP\n\n```\nGET /noCo/api/v2/workspaces/{workspaceId}/tables\n\n ```\n\n\
-        ### 3\uFE0F\u20E3 Path Parameters\n\n| **Parameter** | **Type** | **Required**\
-        \ | **Description** |  \n| **workspaceId** | UUID | \u2705 Yes | Identifier\
-        \ of the workspace to query. |\n\n### 4\uFE0F\u20E3 Query Parameters\n\n|\
-        \ **Parameter** | **Type** | **Required** | **Description** |  \n| **isIncludeColumns**\
-        \ | boolean | \u274C No | If set to `true`, the response includes the full\
-        \ column metadata for each table. |\n\n### 5\uFE0F\u20E3 Authentication\n\n\
-        Requires a valid authentication token passed in the custom header.\n\nHTTP\n\
-        \n```\nx-auth-token: <token>\n\n ```\n\n### 6\uFE0F\u20E3 Required Permissions\n\
-        \nUser must have:\n\n- **READ_WORKSPACE** permissions for the specified ID.\n\
-        \    \n- Active membership in the workspace.\n    \n\n### 7\uFE0F\u20E3 Request\
-        \ Headers\n\n| **Header** | **Required** | **Description** |  \n| **x-auth-token**\
-        \ | \u2705 Yes | Your API authentication token. |  \n| **Accept** | \u274C\
-        \ No | `application/json`. |\n\n### 8\uFE0F\u20E3 Field Descriptions (Response)\n\
-        \n| **Field** | **Type** | **Description** |  \n| **id** | string | Unique\
-        \ identifier for the table. |  \n| **title** | string | Display name of the\
-        \ workbook. |  \n| **columns** | array | List of column objects (only if `isIncludeColumns=true`).\
-        \ |  \n| **tableType** | enum | Type of table (e.g., `DYNAMIC`, `STATIC`).\
-        \ |\n\n### 9\uFE0F\u20E3 Example Request\n\nBash\n\n```\ncurl -X GET \\\n\
-        \  \"https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables?isIncludeColumns=true\"\
-        \ \\\n  -H \"x-auth-token: <your_token_here>\"\n\n ```\n\n### \U0001F504 Behavior\n\
-        \nWhen this endpoint is called:\n\n- **Workspace Validation:** The system\
-        \ confirms the `workspaceId` exists and the user has access.\n    \n- **Conditional\
-        \ Expansion:** If `isIncludeColumns` is `true`, the system performs a join\
-        \ or secondary lookup to fetch column definitions (names, types, and UI metadata).\n\
-        \    \n- **Sorting:** Tables are typically returned based on their `position`\
-        \ index within the workspace."
+      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nRetrieve a list of all Workbooks associated with a specific workspace.\n\nUsed to populate workspace dashboards or fetch workbook structure metadata for synchronization tasks.\n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n``` bash\nGET /noCo/api/v2/workspaces/{workspaceId}/tables\n```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Identifier of the workspace to query |\n\n---\n\n## 4\uFE0F\u20E3 Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| isIncludeColumns | boolean | \u274C No | If `true`, the response includes column metadata for each workbook |\n\n---\n\n## 5\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\n``` bash\nx-auth-token: <token>\n```\n\n---\n\n## 6\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n| x-auth-token | \u2705 Yes |\n| Accept | \u274C No |\n\n---\n\n## 7\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X GET https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables?isIncludeColumns=true \\\n-H \"x-auth-token: <token>\"\n```\n\n---\n\n## 8\uFE0F\u20E3 Response Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | string | Unique identifier for the workbook |\n| title | string | Display name of the workbook |\n| columns | array | Column metadata (returned only when `isIncludeColumns=true`) |\n| tableType | enum | Type of workbook (`DYNAMIC`, `STATIC`) |\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\n```\nRetrieves all workbooks within the specified workspace.\n\nIf isIncludeColumns=true, column definitions such as name, type, and UI metadata are included in the response.\n\nResults are typically returned in the order of workbook position configured in the workspace.\n```"
   /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}:
     get:
       summary: Get Workbook Schema
@@ -1447,7 +1418,7 @@ paths:
           in: header
           schema:
             type: string
-          example: 7b6c69bd3431489e9bc79405e08fc37bb26813dcaf8ba5067808173b49282866
+          example: <token>
       responses:
         '200':
           description: Update Row In Workbook
@@ -1888,7 +1859,7 @@ paths:
           in: header
           schema:
             type: string
-          example: 7b6c69bd3431489e9bc79405e08fc37bb26813dcaf8ba5067808173b49282866
+          example: <token>
       responses:
         '200':
           description: Column Updated successfully
