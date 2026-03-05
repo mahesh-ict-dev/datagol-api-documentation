@@ -1325,16 +1325,38 @@ paths:
         \ using pageNumber and pageSize\n\u2022 Large dataset handling without loading\
         \ entire workbook data\n\n ```"
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
-            example: "{\n    \"requestPageDetails\": {\n        \"pageNumber\": 1,\n\
-              \        \"pageSize\": 500\n    },\n    \"sortOptions\": [{\n      \"\
-              columnName\": \"first_name\",\n      \"direction\": \"DESC\"\n    }],\n\
-              \    \"whereClause\": \"(`first_name` like '%d%' and `years_of_experience`\
-              \ > 4 and `start_date` between '2004-01-01' and '2009-12-31' and `is_active`\
-              \ = true)\"\n    // date should be in YYYY-MM-DD format\n}"
+              properties:
+                requestPageDetails:
+                  type: object
+                  properties:
+                    pageNumber:
+                      type: integer
+                    pageSize:
+                      type: integer
+                sortOptions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      columnName:
+                        type: string
+                      direction:
+                        type: string
+                whereClause:
+                  type: string
+            example:
+              requestPageDetails:
+                pageNumber: 1
+                pageSize: 500
+              sortOptions:
+                - columnName: first_name
+                  direction: DESC
+              whereClause: "(`first_name` like '%d%' and `years_of_experience` > 4 and `start_date` between '2004-01-01' and '2009-12-31' and `is_active` = true)"
     parameters:
       - name: workspaceId
         in: path
