@@ -9,6 +9,47 @@ servers:
   - url: https://kg.datagol.ai
   - url: https://ai.datagol.ai
 paths:
+  /idp/api/v1/user/token:
+    post:
+      summary: Generate Authentication Token
+      responses:
+        '200':
+          description: Authentication token generated successfully
+      tags:
+        - Getting Started
+      description: "## 1️⃣ Overview\n\n**Purpose:**  \nGenerates an authentication token\
+        \ for a user in the DataGOL Platform.\n\nThis endpoint validates the provided\
+        \ user credentials and returns a JWT token that can be used to authenticate\
+        \ subsequent API requests.\n\n---\n\n## 2️⃣ Endpoint\n\n``` bash\nPOST /idp/api/v1/user/token\n\
+        \n ```\n\nBase URL:\n\n```\nhttps://be.datagol.ai\n\n ```\n\n---\n\n## 3️⃣ Request Headers\n\n\
+        | Header | Required |\n| --- | --- |\n| Content-Type: application/json | ✅ Yes |\n\
+        \n---\n\n## 4️⃣ Request Body Schema\n\n``` json\n{\n  \"email\": \"string\",\n\
+        \  \"password\": \"string\"\n}\n\n ```\n\n---\n\n## 5️⃣ Field Descriptions\n\n\
+        ### Token Generation Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n\
+        | email | string | The registered email address (e.g., sample_email@datagol.com). |\n\
+        | password | string | The user's account password. |\n\n---\n\n## 6️⃣ Example Request\n\n\
+        ``` bash\ncurl -X POST https://be.datagol.ai/idp/api/v1/user/token \\\n-H \"\
+        Content-Type: application/json\" \\\n-d '{\n  \"email\": \"sample_email@datagol.com\"\
+        ,\n  \"password\": \"UserPassword123\"\n}'\n\n ```\n\n---\n\n## 7️⃣ Example Response\n\n\
+        ``` json\n{\n  \"token\": \"eyXXXXXX\"\n\
+        }\n\n ```\n\n---\n\n## 8️⃣ Behavior Summary\n\nValidates the provided user credentials\
+        \ and generates a JWT authentication token.\n\nThe returned token should be\
+        \ used in subsequent API requests for authentication, typically passed in request\
+        \ headers."
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+            example:
+              email: sample_email@datagol.com
+              password: password123
   /idp/api/v1/user/login:
     post:
       summary: Login to DataGOL
@@ -132,11 +173,11 @@ paths:
     post:
       summary: Create Workspace
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: create Workspace
@@ -147,8 +188,8 @@ paths:
         \ configurations within the platform.\n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\
         \n``` bash\nPOST /noCo/api/v2/workspaces\n\n ```\n\n---\n\n## 3\uFE0F\u20E3\
         \ Authentication\n\nRequires authentication using:\n\n``` id=\"l8v3z7\"\n\
-        x-auth-token: <token>\n\n ```\n\n---\n\n## 4\uFE0F\u20E3 Request Headers\n\
-        \n| Header | Required |\n| --- | --- |\n| x-auth-token | \u2705 Yes |\n| Content-Type:\
+        Authorization: Bearer <token>\n\n ```\n\n---\n\n## 4\uFE0F\u20E3 Request Headers\n\
+        \n| Header | Required |\n| --- | --- |\n| Authorization | \u2705 Yes |\n| Content-Type:\
         \ application/json | \u2705 Yes |\n\n---\n\n## 5\uFE0F\u20E3 Request Body\
         \ Schema\n\n``` json\n{\n  \"name\": \"string\",\n  \"description\": \"string\"\
         \n}\n\n ```\n\n---\n\n## 6\uFE0F\u20E3 Field Descriptions\n\n### Workspace\
@@ -157,7 +198,7 @@ paths:
         \ |\n| description | string | \u274C No | A brief description of the workspace\
         \ (can be an empty string) |\n\n---\n\n## 7\uFE0F\u20E3 Example Request\n\n\
         ``` bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces \\\n-H\
-        \ \"x-auth-token: <token>\" \\\n-H \"Content-Type: application/json\" \\\n\
+        \ \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n\
         -d '{\n  \"name\": \"Sales Workspace\",\n  \"description\": \"Workspace for\
         \ sales team data\"\n}'\n\n ```\n\n---\n\n## 8\uFE0F\u20E3 Behavior Summary\n\
         \nCreates a new workspace in the DataGOL Platform to organize users, resources,\
@@ -178,33 +219,22 @@ paths:
     get:
       summary: Get All Workspaces
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Get All Workspaces
       tags:
         - Workspaces
-      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nRetrieves the list\
-        \ of all workspaces accessible to the authenticated user or service account.\n\
-        \n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n``` bash\nGET /noCo/api/v2/workspaces\n\
-        \n ```\n\n---\n\n## 3\uFE0F\u20E3 Authentication\n\nRequires Bearer-style\
-        \ authentication using:\n\n```\nx-auth-token: <token>\n\n ```\n\n---\n\n##\
-        \ 4\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n\
-        | x-auth-token | \u2705 Yes |\n\n---\n\n## 5\uFE0F\u20E3 Request Body Schema\n\
-        \n---\n\n## 6\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X GET https://be.datagol.ai/noCo/api/v2/workspaces\
-        \ \\\n-H \"x-auth-token: <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior\
-        \ Summary\n\nThis endpoint returns all workspaces that are accessible to the\
-        \ authenticated user or service account.\n\nIt supports workspace-level access\
-        \ control and filters results based on user permissions."
+      description: "## 1️⃣ Overview\n\n**Purpose:**  \nRetrieves the list of all workspaces accessible to the authenticated user or service account.\n\n---\n\n## 2️⃣ Endpoint\n\n``` bash\nGET /noCo/api/v2/workspaces\n\n```\n\n---\n\n## 3️⃣ Authentication\n\nRequires Bearer-style authentication using:\n\n```\nAuthorization: Bearer <token>\n\n```\n\n---\n\n## 4️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n\n---\n\n## 5️⃣ Example Request\n\n``` bash\ncurl -X GET https://be.datagol.ai/noCo/api/v2/workspaces \\\n-H \"Authorization: Bearer <token>\"\n\n```\n\n---\n\n## 6️⃣ Behavior Summary\n\nThis endpoint returns all workspaces that are accessible to the authenticated user or service account.\n\nIt supports workspace-level access control and filters results based on user permissions."
   /noCo/api/v2/workspaces/{workspaceId}/bulkUsers:
     post:
       summary: Add Service Email to Workspace
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
@@ -221,9 +251,9 @@ paths:
         \n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description\
         \ |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Identifier\
         \ of the workspace |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires\
-        \ authentication using:\n\n``` id=\"k6rj3w\"\nx-auth-token: <token>\n\n ```\n\
+        \ authentication using:\n\n``` id=\"k6rj3w\"\nAuthorization: Bearer <token>\n\n ```\n\
         \n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| ---\
-        \ | --- |\n| x-auth-token | \u2705 Yes |\n| Content-Type: application/json\
+        \ | --- |\n| Authorization | \u2705 Yes |\n| Content-Type: application/json\
         \ | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n\
         {\n  \"workSpaceUsers\": [\n    {\n      \"email\": \"string\",\n      \"\
         role\": \"string\"\n    }\n  ],\n  \"message\": \"string\"\n}\n\n ```\n\n\
@@ -235,7 +265,7 @@ paths:
         \ |\n| message | string | \u274C No | Optional message sent along with the\
         \ invite |\n\n---\n\n## 8\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X\
         \ POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/bulkUsers\
-        \ \\\n-H \"x-auth-token: <token>\" \\\n-H \"Content-Type: application/json\"\
+        \ \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"\
         \ \\\n-d '{\n  \"workSpaceUsers\": [\n    {\n      \"email\": \"user1@datagol.com\"\
         ,\n      \"role\": \"EDITOR\"\n    },\n    {\n      \"email\": \"user2@datagol.com\"\
         ,\n      \"role\": \"VIEWER\"\n    }\n  ],\n  \"message\": \"Workspace access\
@@ -276,11 +306,11 @@ paths:
     post:
       summary: Generate Schema for Advanced Extraction
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Generate Schema for Advanced Extraction
@@ -294,8 +324,8 @@ paths:
         \ Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID\
         \ | \u2705 Yes | Identifier of the workspace |\n\n---\n\n## 4\uFE0F\u20E3\
         \ Authentication\n\nRequires authentication using:\n\n``` id=\"c3yq8n\"\n\
-        x-auth-token: <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request Headers\n\
-        \n| Header | Required |\n| --- | --- |\n| x-auth-token | \u2705 Yes |\n| Content-Type:\
+        Authorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request Headers\n\
+        \n| Header | Required |\n| --- | --- |\n| Authorization | \u2705 Yes |\n| Content-Type:\
         \ application/json | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body\
         \ Schema\n\n``` json\n{\n  \"prompt\": \"string\",\n  \"content\": \"string\"\
         ,\n  \"fileId\": \"string\"\n}\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Field Descriptions\n\
@@ -305,7 +335,7 @@ paths:
         \ (if not using fileId) |\n| fileId | string | \u274C Optional | File ID (if\
         \ not using content) |\n\n---\n\n## 8\uFE0F\u20E3 Example Request\n\n``` bash\n\
         curl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/schema/generate\
-        \ \\\n-H \"x-auth-token: <token>\" \\\n-H \"Content-Type: application/json\"\
+        \ \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"\
         \ \\\n-d '{\n  \"prompt\": \"Extract schema from invoice file\",\n  \"content\"\
         : \"file raw text content here\"\n}'\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior\
         \ Summary\n\nGenerates a schema using either file content or file ID based\
@@ -359,11 +389,11 @@ paths:
     post:
       summary: Test API for Advanced Extraction
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Test API for Advanced Extraction
@@ -375,9 +405,9 @@ paths:
         \n ```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type |\
         \ Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID\
         \ | \u2705 Yes | Identifier of the workspace |\n\n---\n\n## 4\uFE0F\u20E3\
-        \ Authentication\n\nRequires authentication using:\n\n``` bash\nx-auth-token:\
-        \ <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header |\
-        \ Required |\n| --- | --- |\n| x-auth-token | \u2705 Yes |\n| Content-Type:\
+        \ Authentication\n\nRequires authentication using:\n\n``` bash\nAuthorization:\
+        \ Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header |\
+        \ Required |\n| --- | --- |\n| Authorization | \u2705 Yes |\n| Content-Type:\
         \ application/json | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body\
         \ Schema\n\n``` json\n{\n  \"content\": \"string\",\n  \"advancedSchema\"\
         : {},\n  \"elementId\": \"string\"\n}\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Field\
@@ -387,7 +417,7 @@ paths:
         \ Yes | JSON schema for advanced extraction |\n| elementId | string | \u274C\
         \ No | File ID for testing instead of content |\n\n---\n\n## 8\uFE0F\u20E3\
         \ Example Request\n\n``` bash\ncurl -X POST https://{base_url}/noCo/api/v2/workspaces/{workspaceId}/extraction/advanced/test\
-        \ \\\n-H \"x-auth-token: <token>\" \\\n-H \"Content-Type: application/json\"\
+        \ \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"\
         \ \\\n-d '{\n  \"content\": \"Sample invoice text\",\n  \"advancedSchema\"\
         : {\n    \"fields\": []\n  }\n}'\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior\
         \ Summary\n\nPerforms an advanced extraction test using either inline content\
@@ -436,9 +466,9 @@ paths:
               \n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description\
               \ |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Identifier\
               \ of the workspace |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires\
-              \ authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\
+              \ authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\
               \n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n\
-              | x-auth-token | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes\
+              | Authorization | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes\
               \ |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n{\n  \"content\"\
               : \"Transcript text here\",\n  \"columnConfiguration\": [\n    { \"name\"\
               : \"Speaker Name\", \"description\": \"Extract speaker name\" }\n  ]\n}\n\n\
@@ -447,7 +477,7 @@ paths:
               \ --- |\n| content | string | \u2705 Yes | Inline content to test extraction\
               \ |\n| columnConfiguration | array | \u2705 Yes | Column definitions |\n\n\
               ---\n\n## 8\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/test\
-              \ \\\n-H \"x-auth-token: <token>\" \\\n-H \"Content-Type: application/json\"\
+              \ \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"\
               \ \\\n-d '{\n  \"content\": \"Sample document text\",\n  \"columnConfiguration\"\
               : [\n    {\n      \"name\": \"invoiceNumber\",\n      \"type\": \"SINGLE_LINE_TEXT\"\
               \n    }\n  ]\n}'\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\nRuns\
@@ -460,12 +490,12 @@ paths:
             type: string
           example: '{{workspaceId}}'
 
-        - name: x-auth-token
+        - name: Authorization
           in: header
           required: false
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
 
       requestBody:
         required: true
@@ -522,12 +552,12 @@ paths:
             type: string
           example: "{{workspaceId}}"
 
-        - name: x-auth-token
+        - name: Authorization
           in: header
           required: true
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
 
       requestBody:
         required: true
@@ -663,14 +693,14 @@ paths:
       summary: Update Extraction
       tags:
         - AI Extraction
-      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nUpdates an existing extraction configuration.\n\nSupports:\n\n- STANDARD or ADVANCED extraction modes\n    \n- Column, file, or folder-based extraction\n    \n- Schema-driven advanced extraction\n    \n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n``` bash\nPUT /noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}\n\n ```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Workspace identifier |\n| extractionId | string | \u2705 Yes | Extraction configuration identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n| x-auth-token | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n{\n  \"title\": \"string\",\n  \"extractionMode\": \"string\",\n  \"elementType\": \"string\",\n  \"elementId\": \"string\",\n  \"inputTableId\": \"string\",\n  \"outputConfiguration\": {},\n  \"columnConfiguration\": [],\n  \"primaryKeyColumnId\": [],\n  \"storeExtractedData\": true,\n  \"scheduleType\": \"string\",\n  \"schedule\": {},\n  \"advancedSchema\": {}\n}\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\nUpdates an extraction configuration within a workspace."
+      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nUpdates an existing extraction configuration.\n\nSupports:\n\n- STANDARD or ADVANCED extraction modes\n    \n- Column, file, or folder-based extraction\n    \n- Schema-driven advanced extraction\n    \n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n``` bash\nPUT /noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}\n\n ```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Workspace identifier |\n| extractionId | string | \u2705 Yes | Extraction configuration identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n{\n  \"title\": \"string\",\n  \"extractionMode\": \"string\",\n  \"elementType\": \"string\",\n  \"elementId\": \"string\",\n  \"inputTableId\": \"string\",\n  \"outputConfiguration\": {},\n  \"columnConfiguration\": [],\n  \"primaryKeyColumnId\": [],\n  \"storeExtractedData\": true,\n  \"scheduleType\": \"string\",\n  \"schedule\": {},\n  \"advancedSchema\": {}\n}\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\nUpdates an extraction configuration within a workspace."
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           required: true
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
 
       requestBody:
         required: true
@@ -781,11 +811,11 @@ paths:
     get:
       summary: Get Extractions
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Get Extractions by Element
@@ -800,11 +830,11 @@ paths:
         \ | \u2705 Yes | Workspace identifier |\n| elementType | string | \u2705 Yes\
         \ | COLUMN / FILE / FOLDER |\n| elementId | string | \u2705 Yes | File, folder,\
         \ or column ID |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication\
-        \ using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
-        \ Request Headers\n\n| Header | Required |\n| --- | --- |\n| x-auth-token\
+        \ using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
+        \ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization\
         \ | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example Request\n\n``` bash\n\
         curl -X GET \"https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/{elementType}/{elementId}\"\
-        \ \\\n-H \"x-auth-token: <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior\
+        \ \\\n-H \"Authorization: Bearer <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior\
         \ Summary\n\nReturns all active extraction configurations linked to the specified\
         \ element within the workspace."
     parameters:
@@ -835,11 +865,11 @@ paths:
           schema:
             type: boolean
           example: 'true'
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Trigger Extraction
@@ -860,9 +890,9 @@ paths:
         \ | boolean | \u274C No | Default false |\n\nBehavior:\n\n- `true` \u2192\
         \ Only new records are extracted\n    \n- `false` \u2192 Selected records\
         \ are upserted (update existing + insert new)\n    \n\n---\n\n## 5\uFE0F\u20E3\
-        \ Authentication\n\nRequires authentication using:\n\n``` bash\nx-auth-token:\
-        \ <token>\n\n ```\n\n---\n\n## 6\uFE0F\u20E3 Request Headers\n\n| Header |\
-        \ Required |\n| --- | --- |\n| x-auth-token | \u2705 Yes |\n| Content-Type:\
+        \ Authentication\n\nRequires authentication using:\n\n``` bash\nAuthorization:\
+        \ Bearer <token>\n\n ```\n\n---\n\n## 6\uFE0F\u20E3 Request Headers\n\n| Header |\
+        \ Required |\n| --- | --- |\n| Authorization | \u2705 Yes |\n| Content-Type:\
         \ application/json | Optional |\n\n---\n\n## 7\uFE0F\u20E3 Request Body Schema\
         \ (Optional)\n\n``` json\n{\n  \"rows\": [],\n  \"whereClause\": \"string\"\
         ,\n  \"selectAll\": true\n}\n\n ```\n\n---\n\n## 8\uFE0F\u20E3 Field Descriptions\n\
@@ -872,7 +902,7 @@ paths:
         | selectAll | boolean | \u274C No | Select all rows flag |\n\n---\n\n## 9\uFE0F\
         \u20E3 Example Request\n\n### Trigger extraction for selected rows\n\n```\
         \ bash\ncurl -X POST \"https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}/{elementType}/{elementId}/run?extractOnlyNew=true\"\
-        \ \\\n-H \"x-auth-token: <token>\" \\\n-H \"Content-Type: application/json\"\
+        \ \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"\
         \ \\\n-d '{\n  \"selectAll\": false,\n  \"rows\": [\n    {\n      \"id\":\
         \ \"row1\",\n      \"name\": \"Sample Data\"\n    }\n  ]\n}'\n\n ```\n\n---\n\
         \n## \U0001F51F Behavior Summary\n\n```\nTriggers an extraction execution\
@@ -982,20 +1012,20 @@ paths:
         \ Required | Description |\n| --- | --- | --- | --- |\n| requestId | string\
         \ | \u2705 Yes | Request ID returned from Trigger Extraction endpoint |\n\n\
         ---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\
-        \n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request\
-        \ Headers\n\n| Header | Required |\n| --- | --- |\n| x-auth-token | \u2705\
+        \n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request\
+        \ Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | \u2705\
         \ Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X GET\
         \ https://be.datagol.ai/noCo/api/v1/requestLog/status/{requestId} \\\n-H \"\
-        x-auth-token: <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior Summary\n\
+        Authorization: Bearer <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior Summary\n\
         \n```\nRetrieves the processing status of an asynchronous extraction request.\n\
         This endpoint is used for polling extraction job execution progress.\n\n ```"
     parameters:
-      - name: x-auth-token
+      - name: Authorization
         in: header
         required: true
         schema:
           type: string
-        example: <token>
+        example: Bearer <token>
       - name: requestId
         in: path
         required: true
@@ -1016,12 +1046,12 @@ paths:
         ```http
         DELETE /noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           required: true
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         "200":
           description: Resource deleted successfully
@@ -1029,12 +1059,12 @@ paths:
     post:
       summary: Create Workbooks
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           required: true
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Create Workbooks
@@ -1049,7 +1079,7 @@ paths:
         \ Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID\
         \ | \u2705 Yes | Identifier of the workspace where the workbook will be created\
         \ |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires **Bearer JWT Token**\n\
-        \n```\nAuthorization: x-auth-token <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
+        \n```\nAuthorization: Authorization Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
         \ Required Permissions\n\nUser must have:\n\n- `CREATOR` or EDITOR permission\
         ---\n\n## 6\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- |\
         \ --- |\n| Authorization | \u2705 Yes |\n| Content-Type: application/json\
@@ -1074,7 +1104,7 @@ paths:
         \ | UI column type |\n| uiMetadata.title | string | \u274C | Display name\
         \ |\n| uiMetadata.frozen | boolean | \u274C | Freeze column in UI |\n\n---\n\
         \n## 9\uFE0F\u20E3 Example Request\n\n```\ncurl -X POST \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables\
-        \ \\-H \"Authorization: Bearer <token>\" \\-H \"Content-Type: application/json\"\
+        \ \\-H \"Authorization: Bearer Bearer <token>\" \\-H \"Content-Type: application/json\"\
         \ \\-d &#x27;{  \"position\": 0,  \"tableName\": \"workbook_1772105600085\"\
         ,  \"description\": \"\",  \"tableType\": \"DYNAMIC\",  \"title\": \"Workbook\
         \ 1\",  \"columns\": [    {      \"name\": \"name\",      \"uiDataType\":\
@@ -1189,28 +1219,28 @@ paths:
           schema:
             type: boolean
           example: 'true'
-        - name: x-auth-token
+        - name: Authorization
           in: header
           required: true
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Get tables in workspace
       tags:
         - WorkBook
-      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nRetrieve a list of all Workbooks associated with a specific workspace.\n\nUsed to populate workspace dashboards or fetch workbook structure metadata for synchronization tasks.\n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n``` bash\nGET /noCo/api/v2/workspaces/{workspaceId}/tables\n```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Identifier of the workspace to query |\n\n---\n\n## 4\uFE0F\u20E3 Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| isIncludeColumns | boolean | \u274C No | If `true`, the response includes column metadata for each workbook |\n\n---\n\n## 5\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\n``` bash\nx-auth-token: <token>\n```\n\n---\n\n## 6\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n| x-auth-token | \u2705 Yes |\n| Accept | \u274C No |\n\n---\n\n## 7\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X GET https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables?isIncludeColumns=true \\\n-H \"x-auth-token: <token>\"\n```\n\n---\n\n## 8\uFE0F\u20E3 Response Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | string | Unique identifier for the workbook |\n| title | string | Display name of the workbook |\n| columns | array | Column metadata (returned only when `isIncludeColumns=true`) |\n| tableType | enum | Type of workbook (`DYNAMIC`, `STATIC`) |\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\n```\nRetrieves all workbooks within the specified workspace.\n\nIf isIncludeColumns=true, column definitions such as name, type, and UI metadata are included in the response.\n\nResults are typically returned in the order of workbook position configured in the workspace.\n```"
+      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nRetrieve a list of all Workbooks associated with a specific workspace.\n\nUsed to populate workspace dashboards or fetch workbook structure metadata for synchronization tasks.\n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n``` bash\nGET /noCo/api/v2/workspaces/{workspaceId}/tables\n```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Identifier of the workspace to query |\n\n---\n\n## 4\uFE0F\u20E3 Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| isIncludeColumns | boolean | \u274C No | If `true`, the response includes column metadata for each workbook |\n\n---\n\n## 5\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n```\n\n---\n\n## 6\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | \u2705 Yes |\n| Accept | \u274C No |\n\n---\n\n## 7\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X GET https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables?isIncludeColumns=true \\\n-H \"Authorization: Bearer <token>\"\n```\n\n---\n\n## 8\uFE0F\u20E3 Response Fields\n\n| Field | Type | Description |\n| --- | --- | --- |\n| id | string | Unique identifier for the workbook |\n| title | string | Display name of the workbook |\n| columns | array | Column metadata (returned only when `isIncludeColumns=true`) |\n| tableType | enum | Type of workbook (`DYNAMIC`, `STATIC`) |\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\n```\nRetrieves all workbooks within the specified workspace.\n\nIf isIncludeColumns=true, column definitions such as name, type, and UI metadata are included in the response.\n\nResults are typically returned in the order of workbook position configured in the workspace.\n```"
   /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}:
     get:
       summary: Get Workbook Schema
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           required: true
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Table Schema Generated
@@ -1223,11 +1253,11 @@ paths:
         \ Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID\
         \ | \u2705 Yes | Workspace identifier |\n| workbookId | UUID | \u2705 Yes\
         \ | Workbook (table) identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\
-        \nRequires authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\
+        \nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\
         \n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| ---\
-        \ | --- |\n| x-auth-token | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example\
+        \ | --- |\n| Authorization | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example\
         \ Request\n\n``` bash\ncurl -X GET https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}\
-        \ \\\n-H \"x-auth-token: <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior\
+        \ \\\n-H \"Authorization: Bearer <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior\
         \ Summary\n\n```\nRetrieves workbook metadata and configuration details.\n\
         Returns workbook properties including:\n\u2022 Workbook title and description\n\
         \u2022 Table type and structure\n\u2022 Column definitions\n\u2022 UI metadata\n\
@@ -1249,12 +1279,12 @@ paths:
     post:
       summary: Get Workbook Data
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           required: false
           deprecated: false
           schema: {}
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Get Table Data
@@ -1268,9 +1298,9 @@ paths:
         \ Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID\
         \ | \u2705 Yes | Workspace identifier |\n| workbookId | UUID | \u2705 Yes\
         \ | Workbook identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires\
-        \ authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\
+        \ authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\
         \n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n\
-        | x-auth-token | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes\
+        | Authorization | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes\
         \ |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n{\n  \"requestPageDetails\"\
         : {\n    \"pageNumber\": 1,\n    \"pageSize\": 500\n  },\n  \"sortOptions\"\
         : [],\n  \"whereClause\": \"string\"\n}\n\n ```\n\n---\n\n## 7\uFE0F\u20E3\
@@ -1283,7 +1313,7 @@ paths:
         \ query results |\n| whereClause | string | \u274C No | SQL-like conditional\
         \ filter expression |\n\n---\n\n## 8\uFE0F\u20E3 Example Request\n\n``` bash\n\
         curl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/cursor\
-        \ \\\n-H \"x-auth-token: <token>\" \\\n-H \"Content-Type: application/json\"\
+        \ \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"\
         \ \\\n-d '{\n  \"requestPageDetails\": {\n    \"pageNumber\": 1,\n    \"pageSize\"\
         : 500\n  },\n  \"sortOptions\": [\n    {\n      \"columnName\": \"first_name\"\
         ,\n      \"direction\": \"DESC\"\n    }\n  ],\n  \"whereClause\": \"(`first_name`\
@@ -1322,11 +1352,11 @@ paths:
     post:
       summary: Add Rows
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Add Rows with Data
@@ -1339,15 +1369,15 @@ paths:
         \ Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID\
         \ | \u2705 Yes | Workspace identifier |\n| workbookId | UUID | \u2705 Yes\
         \ | Workbook identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires\
-        \ authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\
+        \ authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\
         \n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n\
-        | x-auth-token | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\
+        | Authorization | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\
         \n``` json\n{\n  \"cellValues\": {}\n}\n\n ```\n\n---\n\n## 7\uFE0F\u20E3\
         \ Field Descriptions\n\n### Row Data\n\n| Field | Type | Required | Description\
         \ |\n| --- | --- | --- | --- |\n| cellValues | object | \u2705 Yes | Key-value\
         \ mapping of workbook column internal names to their values |\n\n---\n\n##\
         \ 8\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/rows\
-        \ \\\n-H \"x-auth-token: <token>\" \\\n-H \"Content-Type: application/json\"\
+        \ \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"\
         \ \\\n-d '{\n  \"cellValues\": {\n    \"first_name\": \"John\",\n    \"years_of_experience\"\
         : 5,\n    \"is_active\": true,\n    \"start_date\": \"2005-06-15\"\n  }\n\
         }'\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\n``` id=\"beh1b\"\
@@ -1414,11 +1444,11 @@ paths:
     put:
       summary: Update Row In Workbook
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Update Row In Workbook
@@ -1434,7 +1464,7 @@ paths:
         \ Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705\
         \ Yes | Identifier of the workspace |\n| workbookId | UUID | \u2705 Yes |\
         \ Identifier of the table |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\n\
-        Requires x-auth-token\n\n```\nAuthorization: x-auth-token\n\n ```\n\n---\n\
+        Requires Authorization\n\n```\nAuthorization: Authorization\n\n ```\n\n---\n\
         \n## 5\uFE0F\u20E3 Required Permissions\n\nUser must have:\n\n- Row edit permission\n\
         \    \n- Table edit access\n    \n- Workspace access\n    \n\nIf row updates\
         \ affect:\n\n- AI columns \u2192 AI execution permission required\n    \n\
@@ -1451,7 +1481,7 @@ paths:
         \ | \u274C | Key-value map using column IDs |\n\nAt least one of `cellValues`\
         \ or `cellValuesByColumnId` must be provided.\n\n---\n\n## 9\uFE0F\u20E3 Example\
         \ Request\n\n```\ncurl -X PUT \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/rows\
-        \ \\-H \"Authorization: x-auth-token <token>\" \\-H \"Content-Type: application/json\"\
+        \ \\-H \"Authorization: Authorization Bearer <token>\" \\-H \"Content-Type: application/json\"\
         \ \\-d &#x27;{  \"id\": 1,  \"cellValues\": {    \"name\": \"dega\"  },  \"\
         cellValuesByColumnId\": {}}&#x27;\n\n ```\n\n---\n\n## \U0001F504 Behavior\n\
         \nWhen this endpoint is called:\n\n1. Validate workspace access\n    \n2.\
@@ -1508,11 +1538,11 @@ paths:
     delete:
       summary: Delete Rows
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Delete Rows
@@ -1525,16 +1555,16 @@ paths:
         \ Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID\
         \ | \u2705 Yes | Workspace identifier |\n| workbookId | UUID | \u2705 Yes\
         \ | Workbook identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires\
-        \ authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\
+        \ authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\
         \n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n\
-        | x-auth-token | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes\
+        | Authorization | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes\
         \ |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n{\n  \"rowIds\"\
         : []\n}\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Field Descriptions\n\n### Row Deletion\
         \ Payload\n\n| Field | Type | Required | Description |\n| --- | --- | ---\
         \ | --- |\n| rowIds | array | \u2705 Yes | List of row identifiers to delete\
         \ |\n\n---\n\n## 8\uFE0F\u20E3 Example Request\n\n``` bash\ncurl --location\
         \ --request DELETE 'https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/rows'\
-        \ \\\n--header &#x27;x-auth-token: <token>&#x27; \\\n--header 'Content-Type:\
+        \ \\\n--header &#x27;Authorization: Bearer <token>&#x27; \\\n--header 'Content-Type:\
         \ application/json' \\\n--data '{\n  \"rowIds\": [\n    5,\n    4,\n    3\n\
         \  ]\n}'\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\n```\nDeletes\
         \ one or more workbook rows.\nSupports bulk deletion using rowIds array.\n\
@@ -1575,7 +1605,7 @@ paths:
         \ | \u2705 Yes | Identifier of the workspace |\n| workbookId | UUID | \u2705\
         \ Yes | Identifier of the table |\n| rowId | string / number | \u2705 Yes\
         \ | Unique identifier of the row |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\
-        \nRequires **Bearer JWT Token**\n\n```\nAuthorization: x-auth-token <token>\n\
+        \nRequires **Bearer JWT Token**\n\n```\nAuthorization: Authorization Bearer <token>\n\
         \n ```\n\n---\n\n## 5\uFE0F\u20E3 Required Permissions\n\nUser must have:\n\
         \n- Workspace access\n    \n- Table view permission\n    \n- Row read permission\n\
         \    \n\nIf table contains:\n\n- AI columns \u2192 permission to view generated\
@@ -1585,9 +1615,9 @@ paths:
         \ application/json | Optional |\n\nBrowser headers (`sec-ch-ua`, `User-Agent`,\
         \ etc.) are not required for backend integration.\n\n---\n\n## 7\uFE0F\u20E3\
         \ Request Example\n\n```\ncurl -X GET \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/rows/{rowId}\
-        \ \\-H \"Authorization: x-auth-token <token>\"\n\n ```\n\nExample with actual\
+        \ \\-H \"Authorization: Authorization Bearer <token>\"\n\n ```\n\nExample with actual\
         \ row ID:\n\n```\ncurl -X GET \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbook}/rows/1\
-        \ \\-H \"Authorization: x-auth-token <token>\"\n\n ```\n\n---\n\n## 8\uFE0F\
+        \ \\-H \"Authorization: Authorization Bearer <token>\"\n\n ```\n\n---\n\n## 8\uFE0F\
         \u20E3 Successful Response\n\n### Example Response\n\n```\n{  \"id\": 1, \
         \ \"values\": {    \"name\": \"dega\",    \"status\": \"Active\",    \"ai_summary\"\
         : \"Generated summary text\",    \"created_at\": \"2026-02-20T10:00:00Z\"\
@@ -1635,11 +1665,11 @@ paths:
     post:
       summary: Generate AI Column
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Generate AI Column
@@ -1685,7 +1715,7 @@ paths:
         \    - On row update\n        \n    - On manual regeneration\n        \n\n\
         ---\n\n## 8\uFE0F\u20E3 Example \u2013 Create AI Column\n\n```\ncurl -X POST\
         \ \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\
-        \ \\-H \"Authorization: Bearer <token>\" \\-H \"Content-Type: application/json\"\
+        \ \\-H \"Authorization: Bearer Bearer <token>\" \\-H \"Content-Type: application/json\"\
         \ \\-d &#x27;{  \"name\": \"col\",  \"uiDataType\": \"SINGLE_LINE_TEXT\",\
         \  \"required\": false,  \"settings\": {    \"aiSettings\": {      \"enabled\"\
         : true,      \"prompt\": \"Extract first name from full name\",      \"model\"\
@@ -1760,12 +1790,12 @@ paths:
     post:
       summary: Create Column
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           required: false
           deprecated: false
           schema: {}
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Create Column
@@ -1780,8 +1810,8 @@ paths:
         \ | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705\
         \ Yes | Workspace identifier |\n| workbookId | UUID | \u2705 Yes | Workbook\
         \ identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication\
-        \ using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
-        \ Request Headers\n\n| Header | Required |\n| --- | --- |\n| x-auth-token\
+        \ using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
+        \ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization\
         \ | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes |\n\n---\n\
         \n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n{\n  \"uiDataType\": \"\
         string\",\n  \"uiMetadata\": {},\n  \"name\": \"string\"\n}\n\n ```\n\n---\n\
@@ -1792,7 +1822,7 @@ paths:
         \ `{ \"title\": \"My Column\" }`) |\n| name | string | \u2705 Yes | Internal\
         \ column name (snake_case recommended) |\n\n---\n\n## 8\uFE0F\u20E3 Example\
         \ Request\n\n``` bash\ncurl --location 'https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/column'\
-        \ \\\n--header &#x27;x-auth-token: <token>&#x27; \\\n--header 'Content-Type:\
+        \ \\\n--header &#x27;Authorization: Bearer <token>&#x27; \\\n--header 'Content-Type:\
         \ application/json' \\\n--data '{\n  \"uiDataType\": \"SINGLE_LINE_TEXT\"\
         ,\n  \"uiMetadata\": {\n    \"title\": \"sample text\"\n  },\n  \"name\":\
         \ \"sample_text\"\n}'\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\
@@ -1855,11 +1885,11 @@ paths:
     put:
       summary: Update Column
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Column Updated successfully
@@ -1915,7 +1945,7 @@ paths:
         2. Trigger regeneration (depending on implementation)\n    \n3. Restrict manual\
         \ edits (if system enforces computed-only mode)\n    \n\n---\n\n## 8\uFE0F\
         \u20E3 Example Request\n\n```\ncurl -X PUT \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/columns/{columnId}\
-        \ \\-H \"Authorization: Bearer <token>\" \\-H \"Content-Type: application/json\"\
+        \ \\-H \"Authorization: Bearer Bearer <token>\" \\-H \"Content-Type: application/json\"\
         \ \\-d &#x27;{  \"name\": \"question\",  \"uiDataType\": \"SINGLE_LINE_TEXT\"\
         ,  \"backendDataType\": \"TEXT\",  \"required\": false,  \"uiMetadata\": {\
         \    \"title\": \"Question\"  },  \"settings\": {    \"aiSettings\": {   \
@@ -2117,11 +2147,11 @@ paths:
     post:
       summary: Upload file in workspace
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Upload file in WorkSpace
@@ -2133,15 +2163,15 @@ paths:
         \n ```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type |\
         \ Required | Description |\n| --- | --- | --- | --- |\n| workspace_id | UUID\
         \ | \u2705 Yes | Workspace identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\
-        \nRequires authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\
+        \nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\
         \n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| ---\
-        \ | --- |\n| x-auth-token | \u2705 Yes |\n\nContent-Type will be automatically\
+        \ | --- |\n| Authorization | \u2705 Yes |\n\nContent-Type will be automatically\
         \ set to:\n\n```\nmultipart/form-data\n\n ```\n\n---\n\n## 6\uFE0F\u20E3 Request\
         \ Body (Form Data)\n\n| Field | Type | Required | Description |\n| --- | ---\
         \ | --- | --- |\n| files | file | \u2705 Yes | File(s) to upload. Supports\
         \ multiple files using multipart/form-data. |\n\n---\n\n## 7\uFE0F\u20E3 Example\
         \ Request\n\n``` bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspace_id}/folder/upload\
-        \ \\\n-H \"x-auth-token: <token>\" \\\n-F \"files=@file1.csv\" \\\n-F \"files=@file2.csv\"\
+        \ \\\n-H \"Authorization: Bearer <token>\" \\\n-F \"files=@file1.csv\" \\\n-F \"files=@file2.csv\"\
         \n\n ```\n\n---\n\n## 8\uFE0F\u20E3 Behavior Summary\n\n``` id=\"beh1e\"\n\
         Uploads one or more files into a workspace folder.\nSupports:\n\u2022 Multiple\
         \ file uploads in a single request  \n\u2022 Multipart/form-data encoding\
@@ -2157,11 +2187,11 @@ paths:
     get:
       summary: Get files in Workspace
       parameters:
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Get files in Workspace
@@ -2173,11 +2203,11 @@ paths:
         ---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required |\
         \ Description |\n| --- | --- | --- | --- |\n| workspace_id | UUID | \u2705\
         \ Yes | Workspace identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\
-        \nRequires authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\
+        \nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\
         \n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| ---\
-        \ | --- |\n| x-auth-token | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example\
+        \ | --- |\n| Authorization | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example\
         \ Request\n\n``` bash\ncurl -X GET https://be.datagol.ai/noCo/api/v2/workspaces/{workspace_id}/folder\
-        \ \\\n-H \"x-auth-token: <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior\
+        \ \\\n-H \"Authorization: Bearer <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior\
         \ Summary\n\n``` id=\"beh2a\"\nRetrieves all folders and files within the\
         \ specified workspace.\nSupports hierarchical workspace storage structure\
         \ and returns metadata of stored files.\n\n ```"
@@ -2202,11 +2232,11 @@ paths:
           schema:
             type: string
           example: '{{workspaceId}}'
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Create Knowledge Graph
@@ -2220,11 +2250,11 @@ paths:
         \ | \u2705 Yes | The ID of the file to create the knowledge graph from |\n\
         | workspace_id | string | \u2705 Yes | Workspace identifier where the knowledge\
         \ graph will be created |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires\
-        \ authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\
+        \ authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\
         \n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n\
-        | x-auth-token | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example Request\n\
+        | Authorization | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example Request\n\
         \n``` bash\ncurl -X POST \"https://kg.datagol.ai/ai/api/v2/knowledge-graph/create?file_id={file_id}&workspace_id={workspace_id}\"\
-        \ \\\n-H \"x-auth-token: <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior\
+        \ \\\n-H \"Authorization: Bearer <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior\
         \ Summary\n\n``` id=\"behkg1\"\nCreates a knowledge graph by processing the\
         \ specified file.\nSupports semantic graph construction from workspace file\
         \ content and stores graph metadata for downstream AI processing.\n\n ```"
@@ -2243,11 +2273,11 @@ paths:
           schema:
             type: string
           example: '{{fileId}}'
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Get Knowledge Graph Status
@@ -2261,11 +2291,11 @@ paths:
         \ Required | Description |\n| --- | --- | --- | --- |\n| file_id | string\
         \ | \u2705 Yes | The ID of the file for which knowledge graph status is requested\
         \ |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\
-        \n``` bash\nx-auth-token: <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request\
-        \ Headers\n\n| Header | Required |\n| --- | --- |\n| x-auth-token | \u2705\
+        \n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request\
+        \ Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | \u2705\
         \ Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example Request\n\n``` bash\ncurl --location\
         \ 'https://ai.datagol.ai/ai/api/v2/knowledge-graph/status?file_id={fileId}'\
-        \ \\\n--header &#x27;x-auth-token: <token>&#x27;\n\n ```\n\n---\n\n## 7\uFE0F\
+        \ \\\n--header &#x27;Authorization: Bearer <token>&#x27;\n\n ```\n\n---\n\n## 7\uFE0F\
         \u20E3 Behavior Summary\n\n``` id=\"behkg2\"\nRetrieves the current processing\
         \ status of knowledge graph generation.\n\n ```"
   /ai/api/v2/knowledge-graph:
@@ -2282,11 +2312,11 @@ paths:
           schema:
             type: integer
           example: '250'
-        - name: x-auth-token
+        - name: Authorization
           in: header
           schema:
             type: string
-          example: <token>
+          example: Bearer <token>
       responses:
         '200':
           description: Get knowledge Graph
@@ -2301,11 +2331,11 @@ paths:
         \ | \u2705 Yes | The ID of the file whose knowledge graph is to be fetched\
         \ |\n| limit | number | \u274C No | Maximum number of nodes/relationships\
         \ to return (default: 100 if not specified) |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\
-        \nRequires authentication using:\n\n``` bash\nx-auth-token: <token>\n\n ```\n\
+        \nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\
         \n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| ---\
-        \ | --- |\n| x-auth-token | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example\
+        \ | --- |\n| Authorization | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example\
         \ Request\n\n``` bash\ncurl --location 'https://ai.datagol.ai/ai/api/v2/knowledge-graph?file_id={file_id}&limit={limit}'\
-        \ \\\n--header &#x27;x-auth-token: <token>&#x27;\n\n ```\n\n---\n\n## 7\uFE0F\
+        \ \\\n--header &#x27;Authorization: Bearer <token>&#x27;\n\n ```\n\n---\n\n## 7\uFE0F\
         \u20E3 Behavior Summary\n\n``` id=\"behkg3\"\nReturns knowledge graph data\
         \ including nodes and relationships.\nSupports pagination-like control using\
         \ the limit parameter.\nDefault response size is 100 entities when limit is\
