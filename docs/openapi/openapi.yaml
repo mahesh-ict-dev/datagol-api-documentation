@@ -1079,7 +1079,7 @@ paths:
         \ Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID\
         \ | \u2705 Yes | Identifier of the workspace where the workbook will be created\
         \ |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires **Bearer JWT Token**\n\
-        \n```\nAuthorization: Authorization Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
+        \n```\nAuthorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
         \ Required Permissions\n\nUser must have:\n\n- `CREATOR` or EDITOR permission\
         ---\n\n## 6\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- |\
         \ --- |\n| Authorization | \u2705 Yes |\n| Content-Type: application/json\
@@ -1104,7 +1104,7 @@ paths:
         \ | UI column type |\n| uiMetadata.title | string | \u274C | Display name\
         \ |\n| uiMetadata.frozen | boolean | \u274C | Freeze column in UI |\n\n---\n\
         \n## 9\uFE0F\u20E3 Example Request\n\n```\ncurl -X POST \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables\
-        \ \\-H \"Authorization: Bearer Bearer <token>\" \\-H \"Content-Type: application/json\"\
+        \ \\-H \"Authorization: Bearer <token>\" \\-H \"Content-Type: application/json\"\
         \ \\-d &#x27;{  \"position\": 0,  \"tableName\": \"workbook_1772105600085\"\
         ,  \"description\": \"\",  \"tableType\": \"DYNAMIC\",  \"title\": \"Workbook\
         \ 1\",  \"columns\": [    {      \"name\": \"name\",      \"uiDataType\":\
@@ -1415,38 +1415,11 @@ paths:
               properties:
                 cellValues:
                   type: object
-                  properties:
-                    name:
-                      type: string
-                    notes:
-                      type: string
-                    status:
-                      type: string
-                    assignee:
-                      type: array
-                      items: {}
-                    datagol_created_by_886744f9:
-                      type: array
-                      items: {}
-                    datagol_updated_by_5619d56d:
-                      type: array
-                      items: {}
-                    sample_formula:
-                      type: integer
-                    sample_demo_formula:
-                      type: integer
-                    sample_text:
-                      type: string
             example:
               cellValues:
                 name: ''
                 notes: ''
                 status: ''
-                assignee: []
-                datagol_created_at_6a397383: null
-                datagol_created_by_886744f9: []
-                datagol_updated_at_e1d3f629: null
-                datagol_updated_by_5619d56d: []
                 sample_formula: 0
                 sample_demo_formula: 0
                 sample_text: ''
@@ -1503,7 +1476,7 @@ paths:
         \ | \u274C | Key-value map using column IDs |\n\nAt least one of `cellValues`\
         \ or `cellValuesByColumnId` must be provided.\n\n---\n\n## 9\uFE0F\u20E3 Example\
         \ Request\n\n```\ncurl -X PUT \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/rows\
-        \ \\-H \"Authorization: Authorization Bearer <token>\" \\-H \"Content-Type: application/json\"\
+        \ \\-H \"Authorization: Bearer <token>\" \\-H \"Content-Type: application/json\"\
         \ \\-d &#x27;{  \"id\": 1,  \"cellValues\": {    \"name\": \"dega\"  },  \"\
         cellValuesByColumnId\": {}}&#x27;\n\n ```\n\n---\n\n## \U0001F504 Behavior\n\
         \nWhen this endpoint is called:\n\n1. Validate workspace access\n    \n2.\
@@ -1545,17 +1518,12 @@ paths:
                   type: integer
                 cellValues:
                   type: object
-                  properties:
-                    name:
-                      type: string
                 cellValuesByColumnId:
                   type: object
             example:
               id: 1
               cellValues:
-                name: 'dega
-
-                  '
+                name: 'dega'
               cellValuesByColumnId: {}
     delete:
       summary: Delete Rows
@@ -1616,7 +1584,7 @@ paths:
           description: Get Row Data By ID
       tags:
         - WorkBook
-      description: "# Get Row Data By ID\n\n## 1\uFE0F\u20E3 Overview\n\n**Purpose:**\n\
+      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**\n\
         \nRetrieves a single row\u2019s complete data from a specified table within\
         \ a workspace using its unique row ID.\n\nThis endpoint returns:\n\n- All\
         \ column values for the row\n    \n- AI-generated values (if applicable)\n\
@@ -1737,7 +1705,7 @@ paths:
         \    - On row update\n        \n    - On manual regeneration\n        \n\n\
         ---\n\n## 8\uFE0F\u20E3 Example \u2013 Create AI Column\n\n```\ncurl -X POST\
         \ \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\
-        \ \\-H \"Authorization: Bearer Bearer <token>\" \\-H \"Content-Type: application/json\"\
+        \ \\-H \"Authorization: Bearer <token>\" \\-H \"Content-Type: application/json\"\
         \ \\-d &#x27;{  \"name\": \"col\",  \"uiDataType\": \"SINGLE_LINE_TEXT\",\
         \  \"required\": false,  \"settings\": {    \"aiSettings\": {      \"enabled\"\
         : true,      \"prompt\": \"Extract first name from full name\",      \"model\"\
@@ -1764,8 +1732,6 @@ paths:
                   properties:
                     title:
                       type: string
-                required:
-                  type: boolean
                 settings:
                   type: object
                   properties:
@@ -1787,7 +1753,6 @@ paths:
               description: ''
               uiMetadata:
                 title: col
-              required: false
               settings:
                 aiSettings:
                   enabled: true
@@ -1823,35 +1788,7 @@ paths:
           description: Create Column
       tags:
         - WorkBook
-      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nCreates a new column\
-        \ inside a workbook.\n\nSupports multiple column types such as:\n\n- Text\
-        \ column\n    \n- Number column\n    \n- Date column\n    \n- Other supported\
-        \ UI data types\n    \n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n``` bash\nPOST\
-        \ /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/column\n\n ```\n\
-        \n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required\
-        \ | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705\
-        \ Yes | Workspace identifier |\n| workbookId | UUID | \u2705 Yes | Workbook\
-        \ identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication\
-        \ using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3\
-        \ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization\
-        \ | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes |\n\n---\n\
-        \n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n{\n  \"uiDataType\": \"\
-        string\",\n  \"uiMetadata\": {},\n  \"name\": \"string\"\n}\n\n ```\n\n---\n\
-        \n## 7\uFE0F\u20E3 Field Descriptions\n\n### Column Configuration\n\n| Field\
-        \ | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType\
-        \ | string | \u2705 Yes | Column type (e.g., SINGLE_LINE_TEXT, NUMBER, DATE\
-        \ etc.) |\n| uiMetadata | object | \u2705 Yes | Metadata for UI display (e.g.,\
-        \ `{ \"title\": \"My Column\" }`) |\n| name | string | \u2705 Yes | Internal\
-        \ column name (snake_case recommended) |\n\n---\n\n## 8\uFE0F\u20E3 Example\
-        \ Request\n\n``` bash\ncurl --location 'https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/column'\
-        \ \\\n--header &#x27;Authorization: Bearer <token>&#x27; \\\n--header 'Content-Type:\
-        \ application/json' \\\n--data '{\n  \"uiDataType\": \"SINGLE_LINE_TEXT\"\
-        ,\n  \"uiMetadata\": {\n    \"title\": \"sample text\"\n  },\n  \"name\":\
-        \ \"sample_text\"\n}'\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\
-        \n``` id=\"behcol2\"\nCreates a new workbook column.\nSupports:\n\u2022 Multiple\
-        \ UI data types (TEXT, NUMBER, DATE, etc.)  \n\u2022 UI metadata configuration\
-        \ for rendering  \n\u2022 Snake_case internal column naming  \n\u2022 Server-side\
-        \ validation before creation\n\n ```"
+      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nCreates a new column inside a workbook.\n\nSupports multiple column types such as:\n\n- Text column\n\n- Number column\n\n- Date column\n\n- Other supported UI data types\n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n``` bash\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/column\n\n```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Workspace identifier |\n| workbookId | UUID | \u2705 Yes | Workbook identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n```\n\n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n{\n  \"uiDataType\": \"string\",\n  \"uiMetadata\": {},\n  \"name\": \"string\"\n}\n\n```\n\n---\n\n## 7\uFE0F\u20E3 Field Descriptions\n\n### Column Configuration\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | \u2705 Yes | Column type (e.g., SINGLE_LINE_TEXT, NUMBER, DATE etc.) |\n| uiMetadata | object | \u2705 Yes | Metadata for UI display (e.g., `{ \"title\": \"My Column\" }`) |\n| name | string | \u2705 Yes | Internal column name (snake_case recommended) |\n\n---\n\n## 8\uFE0F\u20E3 Example Request\n\n``` bash\ncurl --location 'https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/column' \\\n--header 'Authorization: Bearer <token>' \\\n--header 'Content-Type: application/json' \\\n--data '{\n  \"uiDataType\": \"SINGLE_LINE_TEXT\",\n  \"uiMetadata\": {\n    \"title\": \"sample text\"\n  },\n  \"name\": \"sample_text\"\n}'\n\n```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\n``` id=\"behcol2\"\nCreates a new workbook column.\nSupports:\n\u2022 Multiple UI data types (TEXT, NUMBER, DATE, etc.)  \n\u2022 UI metadata configuration for rendering  \n\u2022 Snake_case internal column naming  \n\u2022 Server-side validation before creation\n\n```"
       requestBody:
         content:
           application/json:
@@ -1867,22 +1804,6 @@ paths:
                   properties:
                     title:
                       type: string
-                required:
-                  type: boolean
-                settings:
-                  type: object
-                  properties:
-                    aiSettings:
-                      type: object
-                      properties:
-                        enabled:
-                          type: boolean
-                        prompt:
-                          type: string
-                        model:
-                          type: string
-                        webAccess:
-                          type: boolean
                 name:
                   type: string
             example:
@@ -1967,7 +1888,7 @@ paths:
         2. Trigger regeneration (depending on implementation)\n    \n3. Restrict manual\
         \ edits (if system enforces computed-only mode)\n    \n\n---\n\n## 8\uFE0F\
         \u20E3 Example Request\n\n```\ncurl -X PUT \\https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/columns/{columnId}\
-        \ \\-H \"Authorization: Bearer Bearer <token>\" \\-H \"Content-Type: application/json\"\
+        \ \\-H \"Authorization: Bearer <token>\" \\-H \"Content-Type: application/json\"\
         \ \\-d &#x27;{  \"name\": \"question\",  \"uiDataType\": \"SINGLE_LINE_TEXT\"\
         ,  \"backendDataType\": \"TEXT\",  \"required\": false,  \"uiMetadata\": {\
         \    \"title\": \"Question\"  },  \"settings\": {    \"aiSettings\": {   \
@@ -2001,38 +1922,10 @@ paths:
                   type: string
                 name:
                   type: string
-                workspaceId:
-                  type: string
-                tableId:
-                  type: string
                 uiDataType:
                   type: string
                 backendDataType:
                   type: string
-                required:
-                  type: boolean
-                isDataEditable:
-                  type: boolean
-                isMetaDataEditable:
-                  type: boolean
-                isEditable:
-                  type: boolean
-                isDataTypeEditable:
-                  type: boolean
-                isDeletable:
-                  type: boolean
-                isColumnLevelFormula:
-                  type: boolean
-                isBIFormula:
-                  type: boolean
-                isAudit:
-                  type: boolean
-                isEnriched:
-                  type: boolean
-                isDynamicFormula:
-                  type: boolean
-                isSystemGenerated:
-                  type: boolean
                 colOptions:
                   type: object
                 uiMetadata:
@@ -2054,67 +1947,11 @@ paths:
                           type: string
                         webAccess:
                           type: boolean
-                createdBy:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                    firstname:
-                      type: string
-                    lastname:
-                      type: string
-                    email:
-                      type: string
-                      format: email
-                    status:
-                      type: string
-                    isServiceAccount:
-                      type: boolean
-                    signInMethod:
-                      type: string
-                modifiedBy:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                    firstname:
-                      type: string
-                    lastname:
-                      type: string
-                    email:
-                      type: string
-                      format: email
-                    status:
-                      type: string
-                    isServiceAccount:
-                      type: boolean
-                    signInMethod:
-                      type: string
-                createDate:
-                  type: string
-                  format: date-time
-                modifiedDate:
-                  type: string
-                  format: date-time
+
             example:
               id: 6d9ae325-6fcd-4bd6-a732-b59e424fc095
               name: question
-              workspaceId: e00b2c6b-9068-4399-b695-10ad0ad3c09c
-              tableId: 73130115-1664-4841-9af3-5fa5df281ba6
               uiDataType: SINGLE_LINE_TEXT
-              backendDataType: TEXT
-              required: false
-              isDataEditable: true
-              isMetaDataEditable: true
-              isEditable: true
-              isDataTypeEditable: true
-              isDeletable: true
-              isColumnLevelFormula: false
-              isBIFormula: false
-              isAudit: false
-              isEnriched: false
-              isDynamicFormula: false
-              isSystemGenerated: false
               colOptions: {}
               uiMetadata:
                 title: Question
@@ -2125,24 +1962,6 @@ paths:
                   prompt: ''
                   model: gpt-4o-mini
                   webAccess: false
-              createdBy:
-                id: 101
-                firstname: John
-                lastname: Doe
-                email: john.doe@example.com
-                status: VERIFIED
-                isServiceAccount: false
-                signInMethod: EMAIL
-              modifiedBy:
-                id: 101
-                firstname: John
-                lastname: Doe
-                email: john.doe@example.com
-                status: VERIFIED
-                isServiceAccount: false
-                signInMethod: EMAIL
-              createDate: '2026-02-19T18:25:44.010Z'
-              modifiedDate: '2026-02-19T18:25:44.010Z'
     parameters:
       - name: workspaceId
         in: path
@@ -2162,9 +1981,6 @@ paths:
         schema:
           type: string
         example: '{{columnId}}'
-
-
-
   /noCo/api/v2/workspaces/{workspace_id}/folder/upload:
     post:
       summary: Upload file in workspace
