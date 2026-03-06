@@ -238,7 +238,7 @@ paths:
           in: header
           schema:
             type: string
-          example: cb1848f820cf4e5cb81b0cee75f5eab53c39e38d541b990da8aa3f32d116b32b
+          example: Bearer <token>
       responses:
         '200':
           description: Add Service Email to Workspace
@@ -1917,7 +1917,7 @@ paths:
           description: Column Updated successfully
       tags:
         - WorkBook
-      description: "# Update Column\n\n## 1\uFE0F\u20E3 Overview\n\n**Purpose:**\n\
+      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**\n\
         \nUpdates an existing column\u2019s metadata and configuration within a specified\
         \ table in a workspace.\n\nThis endpoint supports:\n\n- Updating column name\n\
         \    \n- Changing UI metadata (title, precision, etc.)\n    \n- Modifying\
