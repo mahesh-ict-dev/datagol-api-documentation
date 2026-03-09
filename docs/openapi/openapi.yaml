@@ -8,6 +8,15 @@ servers:
   - url: https://be.datagol.ai
   - url: https://kg.datagol.ai
   - url: https://ai.datagol.ai
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        This API uses OAuth 2.0 with the authorization code grant flow.
+
 paths:
   /idp/api/v1/user/token:
     post:
@@ -172,12 +181,8 @@ paths:
   /noCo/api/v2/workspaces:
     post:
       summary: Create Workspace
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: create Workspace
@@ -208,6 +213,8 @@ paths:
           application/json:
             schema:
               type: object
+              required:
+                - name
               properties:
                 name:
                   type: string
@@ -218,12 +225,8 @@ paths:
               description: ''
     get:
       summary: Get All Workspaces
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Get All Workspaces
@@ -233,12 +236,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/bulkUsers:
     post:
       summary: Add Service Email to Workspace
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Add Service Email to Workspace
@@ -305,12 +304,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/extraction/schema/generate:
     post:
       summary: Generate Schema for Advanced Extraction
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Generate Schema for Advanced Extraction
@@ -388,12 +383,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/extraction/advanced/test:
     post:
       summary: Test API for Advanced Extraction
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Test API for Advanced Extraction
@@ -489,13 +480,8 @@ paths:
           schema:
             type: string
           example: '{{workspaceId}}'
-
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
 
       requestBody:
         required: true
@@ -552,13 +538,8 @@ paths:
             type: string
           example: "{{workspaceId}}"
 
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          example: Bearer <token>
-
+      security:
+        - bearerAuth: [ ]
       requestBody:
         required: true
         content:
@@ -694,13 +675,8 @@ paths:
       tags:
         - AI Extraction
       description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nUpdates an existing extraction configuration.\n\nSupports:\n\n- STANDARD or ADVANCED extraction modes\n    \n- Column, file, or folder-based extraction\n    \n- Schema-driven advanced extraction\n    \n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n``` bash\nPUT /noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}\n\n ```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Workspace identifier |\n| extractionId | string | \u2705 Yes | Extraction configuration identifier |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | \u2705 Yes |\n| Content-Type: application/json | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n{\n  \"title\": \"string\",\n  \"extractionMode\": \"string\",\n  \"elementType\": \"string\",\n  \"elementId\": \"string\",\n  \"inputTableId\": \"string\",\n  \"outputConfiguration\": {},\n  \"columnConfiguration\": [],\n  \"primaryKeyColumnId\": [],\n  \"storeExtractedData\": true,\n  \"scheduleType\": \"string\",\n  \"schedule\": {},\n  \"advancedSchema\": {}\n}\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\nUpdates an extraction configuration within a workspace."
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
 
       requestBody:
         required: true
@@ -810,12 +786,8 @@ paths:
   /noCo/api/v2/workspaces/{workspace_id}/extraction/{element_type}/{element_id}:
     get:
       summary: Get Extractions
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Get Extractions by Element
@@ -865,11 +837,8 @@ paths:
           schema:
             type: boolean
           example: 'true'
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Trigger Extraction
@@ -999,42 +968,28 @@ paths:
   /noCo/api/v1/requestLog/status/{requestId}:
     get:
       summary: Poll Status
+      tags:
+        - AI Extraction
+      security:
+        - bearerAuth: [ ]
+      description: "## 1️⃣ Overview\n\n**Purpose:**  \nCheck the status of an asynchronous extraction request.\n\nUsed to monitor extraction job progress triggered from the extraction execution endpoint.\n\n---\n\n## 2️⃣ Endpoint\n\n``` bash\nGET /noCo/api/v1/requestLog/status/{requestId}\n\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| requestId | string | ✅ Yes | Request ID returned from Trigger Extraction endpoint |\n\n---\n\n## 4️⃣ Authentication\n\nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n\n---\n\n## 6️⃣ Example Request\n\n``` bash\ncurl -X GET https://be.datagol.ai/noCo/api/v1/requestLog/status/{requestId} \\\n-H \"Authorization: Bearer <token>\"\n\n```\n\n---\n\n## 7️⃣ Behavior Summary\n\nRetrieves the processing status of an asynchronous extraction request.\nThis endpoint is used for polling extraction job execution progress."
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: Poll Status
-      tags:
-        - AI Extraction
-      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nCheck the status\
-        \ of an asynchronous extraction request.\n\nUsed to monitor extraction job\
-        \ progress triggered from the extraction execution endpoint.\n\n---\n\n##\
-        \ 2\uFE0F\u20E3 Endpoint\n\n``` bash\nGET /noCo/api/v1/requestLog/status/{requestId}\n\
-        \n ```\n\n---\n\n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type |\
-        \ Required | Description |\n| --- | --- | --- | --- |\n| requestId | string\
-        \ | \u2705 Yes | Request ID returned from Trigger Extraction endpoint |\n\n\
-        ---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires authentication using:\n\
-        \n``` bash\nAuthorization: Bearer <token>\n\n ```\n\n---\n\n## 5\uFE0F\u20E3 Request\
-        \ Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | \u2705\
-        \ Yes |\n\n---\n\n## 6\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X GET\
-        \ https://be.datagol.ai/noCo/api/v1/requestLog/status/{requestId} \\\n-H \"\
-        Authorization: Bearer <token>\"\n\n ```\n\n---\n\n## 7\uFE0F\u20E3 Behavior Summary\n\
-        \n```\nRetrieves the processing status of an asynchronous extraction request.\n\
-        This endpoint is used for polling extraction job execution progress.\n\n ```"
-    parameters:
-      - name: Authorization
-        in: header
-        required: true
-        schema:
-          type: string
-        example: Bearer <token>
-      - name: requestId
-        in: path
-        required: true
-        schema:
-          type: string
+
+  /noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}:
     delete:
       summary: Delete Extraction
       tags:
         - AI Extraction
+      security:
+        - bearerAuth: [ ]
       description: |
         ### 1️⃣ Overview
 
@@ -1045,26 +1000,26 @@ paths:
 
         ```http
         DELETE /noCo/api/v2/workspaces/{workspaceId}/extraction/{extractionId}
+        ```
       parameters:
-        - name: Authorization
-          in: header
+        - name: workspaceId
+          in: path
           required: true
           schema:
             type: string
-          example: Bearer <token>
+        - name: extractionId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
-        "200":
+        '200':
           description: Resource deleted successfully
   /noCo/api/v2/workspaces/{workspaceId}/tables:
     post:
       summary: Create Workbooks
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Create Workbooks
@@ -1219,12 +1174,8 @@ paths:
           schema:
             type: boolean
           example: 'true'
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Get tables in workspace
@@ -1234,13 +1185,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}:
     get:
       summary: Get Workbook Schema
-      parameters:
-        - name: Authorization
-          in: header
-          required: true
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Table Schema Generated
@@ -1278,13 +1224,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/cursor:
     post:
       summary: Get Workbook Data
-      parameters:
-        - name: Authorization
-          in: header
-          required: false
-          deprecated: false
-          schema: {}
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Get Table Data
@@ -1373,12 +1314,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/rows:
     post:
       summary: Add Rows
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Add Rows with Data
@@ -1438,12 +1375,8 @@ paths:
         example: '{{workbookId}}'
     put:
       summary: Update Row In Workbook
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Update Row In Workbook
@@ -1527,12 +1460,8 @@ paths:
               cellValuesByColumnId: {}
     delete:
       summary: Delete Rows
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Delete Rows
@@ -1579,6 +1508,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/rows/{rowId}:
     get:
       summary: Get Row Data By ID
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Get Row Data By ID
@@ -1654,12 +1585,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/column:
     post:
       summary: Generate AI Column
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Generate AI Column
@@ -1776,13 +1703,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/columnd:
     post:
       summary: Create Column
-      parameters:
-        - name: Authorization
-          in: header
-          required: false
-          deprecated: false
-          schema: {}
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Create Column
@@ -1827,12 +1749,8 @@ paths:
   /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/columns/{columnId}:
     put:
       summary: Update Column
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Column Updated successfully
@@ -1984,12 +1902,8 @@ paths:
   /noCo/api/v2/workspaces/{workspace_id}/folder/upload:
     post:
       summary: Upload file in workspace
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Upload file in WorkSpace
@@ -2024,12 +1938,8 @@ paths:
   /noCo/api/v2/workspaces/{workspace_id}/folder:
     get:
       summary: Get files in Workspace
-      parameters:
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Get files in Workspace
@@ -2070,11 +1980,8 @@ paths:
           schema:
             type: string
           example: '{{workspaceId}}'
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Create Knowledge Graph
@@ -2111,11 +2018,8 @@ paths:
           schema:
             type: string
           example: '{{fileId}}'
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Get Knowledge Graph Status
@@ -2150,11 +2054,8 @@ paths:
           schema:
             type: integer
           example: '250'
-        - name: Authorization
-          in: header
-          schema:
-            type: string
-          example: Bearer <token>
+      security:
+        - bearerAuth: [ ]
       responses:
         '200':
           description: Get knowledge Graph
