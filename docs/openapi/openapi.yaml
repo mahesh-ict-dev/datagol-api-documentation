@@ -1824,7 +1824,7 @@ paths:
         - WorkBook
       security:
         - bearerAuth: [ ]
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column in a table, establishing a bidirectional relationship between a parent table and a child/associated table.\n\nThis endpoint supports:\n- Creating HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n- Automatically creating a reciprocal link column in the associated table\n\n> ⚠️ **Note:** Links are bidirectional. When a link is created from the parent with relation type `HAS_MANY`, a corresponding column with relation type `BELONGS_TO` is automatically created in the child table.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"uuid\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\"\n  },\n  \"settings\": {},\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions.relationType | string | ✅ Yes | Relation type: `HAS_MANY`, `ONE_TO_ONE`, or `MANY_TO_MANY` |\n| colOptions.associateTableId | UUID | ✅ Yes | The child or linked table ID |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| settings | object | ❌ No | Additional settings (can be empty `{}`) |\n| name | string | ✅ Yes | Internal column name — must be unique within the table |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"6a175502-6458-4314-b4c5-3c2f29626dea\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"people\"\n  },\n  \"settings\": {},\n  \"name\": \"people\"\n}'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nCreates a LINK column in the source table.\nSupports:\n• HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n• Bidirectional — a BELONGS_TO column is auto-created in the child table\n• Column name must be unique within the table\n• Returns the full column object including colOptions with resolved IDs\n```"
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column in a table, establishing a bidirectional relationship between a parent table and a child/associated table.\n\nThis endpoint supports:\n- Creating HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n- Automatically creating a reciprocal link column in the associated table\n\n> ⚠️ **Note:** Links are bidirectional. When a link is created from the parent with relation type `HAS_MANY`, a corresponding column with relation type `BELONGS_TO` is automatically created in the child table.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"uuid\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\"\n  },\n  \"settings\": {},\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions.relationType | string | ✅ Yes | Relation type: `HAS_MANY`, `ONE_TO_ONE`, or `MANY_TO_MANY` |\n| colOptions.associateTableId | UUID | ✅ Yes | The child or linked table ID |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n|  name | string | ✅ Yes | Internal column name — must be unique within the table |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"6a175502-6458-4314-b4c5-3c2f29626dea\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"people\"\n  },\n  \"name\": \"people\"\n}'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nCreates a LINK column in the source table.\nSupports:\n• HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n• Bidirectional — a BELONGS_TO column is auto-created in the child table\n• Column name must be unique within the table\n• Returns the full column object including colOptions with resolved IDs\n```"
       parameters:
         - name: workspaceId
           in: path
@@ -1872,8 +1872,6 @@ paths:
                   properties:
                     title:
                       type: string
-                settings:
-                  type: object
                 name:
                   type: string
             example:
@@ -1883,7 +1881,6 @@ paths:
                 associateTableId: 6a175502-6458-4314-b4c5-3c2f29626dea
               uiMetadata:
                 title: people
-              settings: { }
               name: people
       responses:
         '200':
@@ -1946,9 +1943,7 @@ paths:
                       title:
                         type: string
                         description: Display name shown in the UI
-                  settings:
-                    type: object
-                example: # 👈 add this
+                example:
                   id: 21224153-2f85-4b24-a306-4cfbc7e73f70
                   name: people
                   uiDataType: LINK
@@ -1964,7 +1959,6 @@ paths:
                     isItSource: true
                   uiMetadata:
                     title: people
-                  settings: { }
   /noCo/api/v2/workspaces/{workspace_id}/tables/{table_id}/column:
     post:
       summary: Create Link Column with Auto Join Condition
@@ -1972,7 +1966,7 @@ paths:
         - WorkBook
       security:
         - bearerAuth: [ ]
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column with an automatic join condition between the parent and child tables. Unlike a manual link, this allows defining column-level join conditions that filter how records are linked.\n\nThis endpoint supports:\n- Defining join conditions between columns of two tables\n- Using operators like `EQUALS` for condition matching\n- Passing a raw SQL-style `whereClause` and `formula` for backend filtering\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"associateTableId\": \"uuid\",\n    \"whereClause\": \"string\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\",\n    \"autoJoinConfig\": {\n      \"joinConditions\": [\n        {\n          \"id\": \"string\",\n          \"currentTableColumn\": \"string\",\n          \"linkedTableColumn\": \"string\",\n          \"operator\": \"EQUALS\"\n        }\n      ],\n      \"isSwapped\": false\n    }\n  },\n  \"settings\": {},\n  \"formula\": \"string\",\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions.associateTableId | UUID | ✅ Yes | The child or linked table ID |\n| colOptions.whereClause | string | ✅ Yes | Raw SQL-style condition used for backend join filtering |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| uiMetadata.autoJoinConfig | object | ✅ Yes | Configuration object defining the auto join conditions |\n| uiMetadata.autoJoinConfig.joinConditions | array | ✅ Yes | List of join condition objects |\n| uiMetadata.autoJoinConfig.joinConditions[].id | string | ✅ Yes | Unique identifier for the condition (client-generated) |\n| uiMetadata.autoJoinConfig.joinConditions[].currentTableColumn | string | ✅ Yes | Column name from the current (source) table to join on |\n| uiMetadata.autoJoinConfig.joinConditions[].linkedTableColumn | string | ✅ Yes | Column name from the linked (destination) table to join on |\n| uiMetadata.autoJoinConfig.joinConditions[].operator | string | ✅ Yes | Join operator — currently supports `EQUALS` |\n| uiMetadata.autoJoinConfig.isSwapped | boolean | ❌ No | Whether the join direction is swapped. Defaults to `false` |\n| settings | object | ❌ No | Additional settings, can be empty `{}` |\n| formula | string | ✅ Yes | Raw SQL-style formula matching the whereClause, used for backend processing |\n| name | string | ✅ Yes | Internal column name — must be unique within the table |"
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column with an automatic join condition between the parent and child tables. Unlike a manual link, this allows defining column-level join conditions that filter how records are linked.\n\nThis endpoint supports:\n- Defining join conditions between columns of two tables\n- Using operators like `EQUALS` for condition matching\n- Passing a raw SQL-style `whereClause` and `formula` for backend filtering\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"associateTableId\": \"uuid\",\n    \"whereClause\": \"string\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\",\n    \"autoJoinConfig\": {\n      \"joinConditions\": [\n        {\n          \"id\": \"string\",\n          \"currentTableColumn\": \"string\",\n          \"linkedTableColumn\": \"string\",\n          \"operator\": \"EQUALS\"\n        }\n      ],\n      \"isSwapped\": false\n    }\n  },\n   \"formula\": \"string\",\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions.associateTableId | UUID | ✅ Yes | The child or linked table ID |\n| colOptions.whereClause | string | ✅ Yes | Raw SQL-style condition used for backend join filtering |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| uiMetadata.autoJoinConfig | object | ✅ Yes | Configuration object defining the auto join conditions |\n| uiMetadata.autoJoinConfig.joinConditions | array | ✅ Yes | List of join condition objects |\n| uiMetadata.autoJoinConfig.joinConditions[].id | string | ✅ Yes | Unique identifier for the condition (client-generated) |\n| uiMetadata.autoJoinConfig.joinConditions[].currentTableColumn | string | ✅ Yes | Column name from the current (source) table to join on |\n| uiMetadata.autoJoinConfig.joinConditions[].linkedTableColumn | string | ✅ Yes | Column name from the linked (destination) table to join on |\n| uiMetadata.autoJoinConfig.joinConditions[].operator | string | ✅ Yes | Join operator — currently supports `EQUALS` |\n| uiMetadata.autoJoinConfig.isSwapped | boolean | ❌ No | Whether the join direction is swapped. Defaults to `false`  |\n| formula | string | ✅ Yes | Raw SQL-style formula matching the whereClause, used for backend processing |\n| name | string | ✅ Yes | Internal column name — must be unique within the table |"
       parameters:
         - name: workspaceId
           in: path
@@ -2050,8 +2044,6 @@ paths:
                         isSwapped:
                           type: boolean
                           description: Whether the join direction is swapped. Defaults to false
-                settings:
-                  type: object
                 formula:
                   type: string
                   description: Raw SQL-style formula matching the whereClause, used for backend processing
@@ -2072,7 +2064,6 @@ paths:
                       linkedTableColumn: status
                       operator: EQUALS
                   isSwapped: false
-              settings: { }
               formula: table_1e67d485."course_taken" = table_c8be6d9c."status"
               name: product_link_column
       responses:
@@ -2171,8 +2162,6 @@ paths:
                     type: string
                     format: uuid
                     description: Table ID where this column resides
-                  settings:
-                    type: object
               example:
                 id: efdbce09-6581-4811-aa67-14344e7444b7
                 name: product link column
@@ -2201,7 +2190,6 @@ paths:
                         operator: EQUALS
                     isSwapped: false
                 tableId: 9c8a448d-7884-4158-bfca-202bc95b0515
-                settings: { }
 
   /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/columns:
     post:
@@ -2309,7 +2297,160 @@ paths:
           description: Table identifier to query linked tables for
       responses:
         '200':
-          description: List of linked tables retrieved successfully
+          description: Linked tables retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: Unique identifier of the linked table
+                    workspaceId:
+                      type: string
+                      format: uuid
+                      description: Workspace this table belongs to
+                    tableName:
+                      type: string
+                      description: Internal system name of the table
+                    title:
+                      type: string
+                      description: Display name of the table shown in the UI
+                    description:
+                      type: string
+                      description: Optional description of the table
+                    columns:
+                      type: array
+                      description: List of all columns in the table including system-generated and user-defined columns
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                            description: Unique identifier of the column
+                          name:
+                            type: string
+                            description: Internal column name
+                          uiDataType:
+                            type: string
+                            description: UI data type — e.g. SINGLE_LINE_TEXT, NUMBER, DATE, USER, LINK, ID
+                          backendDataType:
+                            type: string
+                            description: Underlying database data type
+                          colOptions:
+                            type: object
+                            description: Link configuration if the column is of type LINK, otherwise empty
+                            properties:
+                              id:
+                                type: string
+                                format: uuid
+                              relationType:
+                                type: string
+                                description: Relation type — HAS_MANY, ONE_TO_ONE, or MANY_TO_MANY
+                              columnId:
+                                type: string
+                                format: uuid
+                                description: ID of the link column in the source (parent) table
+                              associatedColumnId:
+                                type: string
+                                format: uuid
+                                description: ID of the auto-created reciprocal column in the child table
+                              tableId:
+                                type: string
+                                format: uuid
+                                description: Source table ID
+                              associateTableId:
+                                type: string
+                                format: uuid
+                                description: Destination (child) table ID
+                              childColumnId:
+                                type: string
+                                format: uuid
+                                description: ID of the primary key column in the child (destination) table, used to establish the foreign key relationship
+                              parentColumnId:
+                                type: string
+                                format: uuid
+                                description: ID of the primary key column in the parent (source) table, used to establish the foreign key relationship
+                              whereClause:
+                                type: string
+                                description: Raw SQL-style join condition, present only for auto-join links
+                              isItSource:
+                                type: boolean
+                                description: True if this column is the source side of the relationship
+                          uiMetadata:
+                            type: object
+                            description: UI display metadata for the column
+                            properties:
+                              title:
+                                type: string
+                                description: Display name shown in the UI
+                    views:
+                      type: array
+                      description: List of views defined on this table
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          name:
+                            type: string
+                            description: Display name of the view
+                          type:
+                            type: string
+                            description: View type — e.g. GRID
+                          isMaster:
+                            type: boolean
+                            description: True if this is the default master view
+                          position:
+                            type: integer
+                            description: Display position of the view
+              example:
+                - id: 6d85b345-b626-4b87-b664-66237d7333e8
+                  workspaceId: 16231f3f-8208-4c51-a460-87d17244344f
+                  tableName: table_c8be6d9c
+                  title: employee
+                  description: ""
+                  tableType: DYNAMIC
+                  columns:
+                    - id: 75272cd2-63c4-4d4c-b2eb-20a864834a2a
+                      name: noco_87fee1b5
+                      uiDataType: ID
+                      backendDataType: BIGSERIAL
+                    - id: f0f38619-4396-420f-aa20-5bf13bfac51c
+                      name: course_name
+                      uiDataType: SINGLE_LINE_TEXT
+                      backendDataType: TEXT
+                      required: false
+                      description: ""
+                      uiMetadata:
+                        title: course name
+                    - id: b83a3605-2996-4898-8f31-076d34e49424
+                      name: course_1234
+                      uiDataType: LINK
+                      backendDataType: BIG SERIAL
+                      colOptions:
+                        id: f668c79a-11ca-4640-bcf9-ae214712f0a7
+                        relationType: MANY_TO_MANY
+                        columnId: b83a3605-2996-4898-8f31-076d34e49424
+                        associatedColumnId: a19221ad-ef55-4de7-b9b3-2e6a05e3bd93
+                        tableId: 6d85b345-b626-4b87-b664-66237d7333e8
+                        associateTableId: 9c8a448d-7884-4158-bfca-202bc95b0515
+                        childColumnId: 75272cd2-63c4-4d4c-b2eb-20a864834a2a
+                        parentColumnId: f830fd3f-8624-4ae5-959f-36f1756d828a
+                        isItSource: false
+                      uiMetadata:
+                        title: course
+                  views:
+                    - id: e5a120e8-fa3b-47cb-9773-7541aa4ec270
+                      name: Grid View (Master)
+                      type: GRID
+                      isMaster: true
+                      position: 0
   /noCo/api/v2/workspaces/{workspaceId}/tables/linkRecordV2:
     post:
       summary: Link Records
@@ -2456,6 +2597,41 @@ paths:
       responses:
         '200':
           description: Linked records retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      description: Row ID of the linked record in the destination table
+                    cellValues:
+                      type: object
+                      description: Map of column names to their values for the linked record
+                      properties:
+                        column1:
+                          type: number
+                          description: User-defined column value
+                        column2:
+                          type: string
+                          description: User-defined column value
+                        column3:
+                          type: number
+                          description: User-defined column value
+                        column4:
+                          type: integer
+                          description: User-defined column value
+
+              example:
+                - id: 2
+                  cellValues:
+                    course_id: 102
+                    course_name: JAVA
+                    st_id: 3
+                    employee_075d: 2
+                    employee_753d: 4
   /noCo/api/v2/workspaces/{workspace_id}/folder:
     get:
       summary: Get files in Workspace
