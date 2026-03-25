@@ -28,7 +28,7 @@
       {
         "tab": "Documentation",
         "icon": "book-open",
-        "pages": ["introduction", "api-reference", "ai-extraction-knowledge-graph", "workbook-mcp"]
+        "pages": ["introduction", "api-reference", "links-joins","ai-extraction-knowledge-graph", "workbook-mcp"]
       },
       {
         "tab": "API Reference",

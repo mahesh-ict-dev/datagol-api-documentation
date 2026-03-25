@@ -1,0 +1,126 @@
+---
+title: "Links & Joins"
+description: "LINK and LOOKUP are special workbook column types that enable relational data modeling across tables."
+---
+
+## Overview
+
+LINK and LOOKUP are special workbook column types that enable relational data modeling across tables.
+
+| Column Type | Purpose |
+|---|---|
+| `LINK` | Defines a relationship between two tables |
+| `LOOKUP` | Projects columns from an associated table via a link |
+
+Both are configured through `ColumnDTO.colOptions`. A table can have multiple link columns, and each link can have multiple lookup columns.
+
+---
+
+## UI Data Types
+
+<CardGroup cols={2}>
+  <Card title="LINK" icon="link">
+    Special column used to represent inter-table relations.
+  </Card>
+  <Card title="LOOKUP" icon="magnifying-glass">
+    Special column used to project associated table fields via a link.
+  </Card>
+</CardGroup>
+
+---
+
+## LINK Semantics
+
+A LINK column stores metadata for:
+
+| Field | Description |
+|---|---|
+| `workbookId` | Current table |
+| `associatedTableId` | Associated (linked) table |
+| `relationType` | Type of relationship |
+| `linkColumnId` | Link column identifier |
+
+**Supported relation patterns:**
+
+| Pattern | Description |
+|---|---|
+| `ONE_TO_ONE` | Each record in the source maps to one record in the destination |
+| `ONE_TO_MANY` | One source record maps to many destination records |
+| `MANY_TO_MANY` | Many source records map to many destination records |
+
+---
+
+## LOOKUP Semantics
+
+A LOOKUP column is tightly coupled with a specific LINK column.
+
+- References a link using `linkColumnId`
+- Represents a selected column from the associated table
+- Multiple lookup columns can be defined for the same link
+
+---
+
+## Metadata in `ColumnDTO.colOptions`
+
+Use `colOptions` to persist link/lookup metadata.
+
+| Field | Description |
+|---|---|
+| `columnId` | Current column ID |
+| `tableId` | Current table ID |
+| `associatedTableId` | Associated table ID |
+| `linkColumnId` | Link column ID — used by LOOKUP; references the LINK column's `columnId` |
+| `relationType` | Relation semantics for LINK |
+
+---
+
+## Manual Linking Record Flow
+
+To create manual record-level links:
+
+<Steps>
+  <Step title="Fetch Schema">
+    Fetch the associated table schema and data.
+  </Step>
+  <Step title="Select Record">
+    User selects associated record(s) to link.
+  </Step>
+  <Step title="Send Payload">
+    Send linking payload with `sourceRecordId`, `destinationRecordId`, and `linkColumnId`.
+  </Step>
+  <Step title="Backend Resolves">
+    Backend resolves link metadata from `linkColumnId` — relation type, associated table, and direction/constraints.
+  </Step>
+  <Step title="Store Relation">
+    Backend applies relation rules and stores the link relation.
+  </Step>
+</Steps>
+
+---
+
+## Record Linking Contract
+
+| Field | Description |
+|---|---|
+| `sourceRecordId` | PK of the current table row |
+| `destinationRecordId` | PK of the associated table row |
+| `linkColumnId` | LINK column identifier |
+| `tableId` | Current table ID |
+
+<Note>
+  Backend derives all remaining relation metadata from the link configuration.
+</Note>
+
+---
+
+## Important Notes
+
+<Warning>
+  LINK and LOOKUP are **column-level constructs** first — record linking is a data-level operation built on top.
+</Warning>
+
+<Info>
+  - LOOKUP behavior depends on LINK existence and metadata integrity
+  - With multiple links to the same associated table, each LOOKUP must bind to the correct `linkColumnId`
+  - Always treat the associated row ID as the associated table PK for linking UI selection
+</Info>

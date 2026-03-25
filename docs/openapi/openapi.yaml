@@ -16,6 +16,104 @@ components:
       bearerFormat: JWT
       description: |
         This API uses OAuth 2.0 with the authorization code grant flow.
+tags:
+  - name: Links & Joins
+    description: |
+      ## 🔗 Links & Joins
+
+      LINK and LOOKUP are special workbook column types that enable relational data modeling across tables.
+
+      | Column Type | Purpose |
+      |---|---|
+      | `LINK` | Defines a relationship between two tables |
+      | `LOOKUP` | Projects columns from an associated table via a link |
+
+      Both are configured through `ColumnDTO.colOptions`. A table can have multiple link columns, and each link can have multiple lookup columns.
+
+      ---
+
+      ## 📐 UI Data Types
+
+      - **LINK** — Special column used to represent inter-table relations
+      - **LOOKUP** — Special column used to project associated table fields via a link
+
+      ---
+
+      ## 🔗 LINK Semantics
+
+      A LINK column stores metadata for:
+      - `tableId` — Current table
+      - `associatedTableId` — Associated (linked) table
+      - `relationType` — Type of relationship
+      - `linkColumnId` — Link column identifier
+
+      **Supported relation patterns:**
+
+      | Pattern | Description |
+      |---|---|
+      | `ONE_TO_ONE` | Each record in the source maps to one record in the destination |
+      | `ONE_TO_MANY` | One source record maps to many destination records |
+      | `MANY_TO_MANY` | Many source records map to many destination records |
+
+      ---
+
+      ## 🔍 LOOKUP Semantics
+
+      - A LOOKUP column is tightly coupled with a specific LINK column
+      - References a link using `linkColumnId`
+      - Represents a selected column from the associated table
+      - Multiple lookup columns can be defined for the same link
+
+      ---
+
+      ## 🗂️ Metadata in `ColumnDTO.colOptions`
+
+      Use `colOptions` to persist link/lookup metadata.
+
+      | Field | Description |
+      |---|---|
+      | `columnId` | Current column ID |
+      | `tableId` | Current table ID |
+      | `associatedTableId` | Associated table ID |
+      | `linkColumnId` | Link column ID — used by LOOKUP; references the LINK column's `columnId` |
+      | `relationType` | Relation semantics for LINK |
+
+      ---
+
+      ## 🔄 Manual Linking Record Flow
+
+      To create manual record-level links:
+
+      1. Fetch associated table schema/data
+      2. User selects associated record(s) to link
+      3. Send linking payload with:
+          - `sourceRecordId` — PK of the current table row
+          - `destinationRecordId` — PK of the associated table row
+          - `linkColumnId` — LINK column identifier
+      4. Backend resolves link metadata from `linkColumnId` (relation type, associated table, direction/constraints)
+      5. Backend applies relation rules and stores the link relation
+
+      ---
+
+      ## 📋 Record Linking Contract
+
+      | Field | Description |
+      |---|---|
+      | `sourceRecordId` | PK of the current table row |
+      | `destinationRecordId` | PK of the associated table row |
+      | `linkColumnId` | LINK column identifier |
+      | `tableId` | Current table ID |
+
+      > Backend derives all remaining relation metadata from the link configuration.
+
+      ---
+
+      ## ⚠️ Important Notes
+
+      > - LINK and LOOKUP are **column-level constructs** first; record linking is a data-level operation built on top
+      > - LOOKUP behavior depends on LINK existence and metadata integrity
+      > - With multiple links to the same associated table, each LOOKUP must bind to the correct `linkColumnId`
+      > - Always treat the associated row ID as the associated table PK for linking UI selection
 
 paths:
   /idp/api/v1/user/token:
@@ -1821,7 +1919,7 @@ paths:
     post:
       summary: Create Link Column (Manual-Link)
       tags:
-        - WorkBook
+        - Links & Joins
       security:
         - bearerAuth: [ ]
       description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column in a table, establishing a bidirectional relationship between a parent table and a child/associated table.\n\nThis endpoint supports:\n- Creating HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n- Automatically creating a reciprocal link column in the associated table\n\n> ⚠️ **Note:** Links are bidirectional. When a link is created from the parent with relation type `HAS_MANY`, a corresponding column with relation type `BELONGS_TO` is automatically created in the child table.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"uuid\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\"\n  },\n  \"settings\": {},\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions.relationType | string | ✅ Yes | Relation type: `HAS_MANY`, `ONE_TO_ONE`, or `MANY_TO_MANY` |\n| colOptions.associateTableId | UUID | ✅ Yes | The child or linked table ID |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n|  name | string | ✅ Yes | Internal column name — must be unique within the table |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"6a175502-6458-4314-b4c5-3c2f29626dea\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"people\"\n  },\n  \"name\": \"people\"\n}'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nCreates a LINK column in the source table.\nSupports:\n• HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n• Bidirectional — a BELONGS_TO column is auto-created in the child table\n• Column name must be unique within the table\n• Returns the full column object including colOptions with resolved IDs\n```"
@@ -1963,7 +2061,7 @@ paths:
     post:
       summary: Create Link Column with Auto Join Condition
       tags:
-        - WorkBook
+        - Links & Joins
       security:
         - bearerAuth: [ ]
       description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column with an automatic join condition between the parent and child tables. Unlike a manual link, this allows defining column-level join conditions that filter how records are linked.\n\nThis endpoint supports:\n- Defining join conditions between columns of two tables\n- Using operators like `EQUALS` for condition matching\n- Passing a raw SQL-style `whereClause` and `formula` for backend filtering\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"associateTableId\": \"uuid\",\n    \"whereClause\": \"string\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\",\n    \"autoJoinConfig\": {\n      \"joinConditions\": [\n        {\n          \"id\": \"string\",\n          \"currentTableColumn\": \"string\",\n          \"linkedTableColumn\": \"string\",\n          \"operator\": \"EQUALS\"\n        }\n      ],\n      \"isSwapped\": false\n    }\n  },\n   \"formula\": \"string\",\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions.associateTableId | UUID | ✅ Yes | The child or linked table ID |\n| colOptions.whereClause | string | ✅ Yes | Raw SQL-style condition used for backend join filtering |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| uiMetadata.autoJoinConfig | object | ✅ Yes | Configuration object defining the auto join conditions |\n| uiMetadata.autoJoinConfig.joinConditions | array | ✅ Yes | List of join condition objects |\n| uiMetadata.autoJoinConfig.joinConditions[].id | string | ✅ Yes | Unique identifier for the condition (client-generated) |\n| uiMetadata.autoJoinConfig.joinConditions[].currentTableColumn | string | ✅ Yes | Column name from the current (source) table to join on |\n| uiMetadata.autoJoinConfig.joinConditions[].linkedTableColumn | string | ✅ Yes | Column name from the linked (destination) table to join on |\n| uiMetadata.autoJoinConfig.joinConditions[].operator | string | ✅ Yes | Join operator — currently supports `EQUALS` |\n| uiMetadata.autoJoinConfig.isSwapped | boolean | ❌ No | Whether the join direction is swapped. Defaults to `false`  |\n| formula | string | ✅ Yes | Raw SQL-style formula matching the whereClause, used for backend processing |\n| name | string | ✅ Yes | Internal column name — must be unique within the table |"
@@ -2195,7 +2293,7 @@ paths:
     post:
       summary: Add Lookup Column
       tags:
-        - WorkBook
+        - Links & Joins
       security:
         - bearerAuth: []
       description: "## 1️⃣ Overview\n\n**Purpose:**\nAdds one or more LOOKUP type columns to a specified table. A lookup column pulls field values from a linked (associated) table via an existing LINK column.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/columns\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Table identifier where the lookup column will be created |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"columns\": [\n    {\n      \"description\": \"string\",\n      \"uiMetadata\": {\n        \"title\": \"string\"\n      },\n      \"uiDataType\": \"LOOKUP\",\n      \"colOptions\": {\n        \"linkColumnId\": \"uuid\",\n        \"lookupColumnId\": \"uuid\"\n      },\n      \"name\": \"string\"\n    }\n  ]\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| columns | array | ✅ Yes | Array of lookup column definitions to create |\n| columns[].description | string | ❌ No | Optional description of the column |\n| columns[].uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| columns[].uiDataType | string | ✅ Yes | Must be `LOOKUP` |\n| columns[].colOptions.linkColumnId | UUID | ✅ Yes | ID of the existing LINK column connecting to the source table |\n| columns[].colOptions.lookupColumnId | UUID | ✅ Yes | ID of the column in the linked table whose values should be looked up |\n| columns[].name | string | ✅ Yes | Internal column name — must be unique within the table |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/columns \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"columns\": [\n    {\n      \"description\": \"\",\n      \"uiMetadata\": {\n        \"title\": \"Name (from People)\"\n      },\n      \"uiDataType\": \"LOOKUP\",\n      \"colOptions\": {\n        \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\",\n        \"lookupColumnId\": \"9b5e408d-69bb-42ca-8fa4-ba00f7994356\"\n      },\n      \"name\": \"name_1774285509977\"\n    }\n  ]\n}'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nCreates one or more LOOKUP columns in the target table.\nSupports:\n• Batch creation of multiple lookup columns in one request\n• linkColumnId — references the existing LINK column in the current table\n• lookupColumnId — references the column from the linked table to display\n• Column name must be unique within the table\n```"
@@ -2276,7 +2374,7 @@ paths:
     get:
       summary: Get All Link Tables of Current Table
       tags:
-        - WorkBook
+        - Links & Joins
       security:
         - bearerAuth: [ ]
       description: "## 1️⃣ Overview\n\n**Purpose:**\nRetrieves all tables that are linked to a specified table within a workspace. Useful for discovering all relationships (link columns) associated with a table.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nGET /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/linkTables\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Table identifier to query linked tables for |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Example Request\n\n```bash\ncurl -X GET https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/linkTables \\\n-H \"Authorization: Bearer <token>\"\n```\n\n---\n\n## 7️⃣ Behavior Summary\n\n```\nReturns all tables linked to the specified table.\nIncludes metadata about link columns and relation types.\n```"
@@ -2451,14 +2549,14 @@ paths:
                       type: GRID
                       isMaster: true
                       position: 0
-  /noCo/api/v2/workspaces/{workspaceId}/tables/linkRecordV2:
+  /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/linkRecordV2:
     post:
       summary: Link Records
       tags:
-        - WorkBook
+        - Links & Joins
       security:
         - bearerAuth: [ ]
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nLinks one or more records from a source table to records in a destination table via a LINK column. Supports batch linking of multiple record pairs in a single request.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/linkRecordV2\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n[\n  {\n    \"sourceRecordId\": integer,\n    \"destinationRecordId\": integer,\n    \"tableId\": \"uuid\",\n    \"linkColumnId\": \"uuid\"\n  }\n]\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| sourceRecordId | integer | ✅ Yes | The row ID of the source record in the current table that you want to link to the destination record. |\n| destinationRecordId | integer | ✅ Yes | The row ID of the destination record in the linked table that you want to link to the source record. |\n| tableId | UUID | ✅ Yes | Current (source) table ID |\n| linkColumnId | UUID | ✅ Yes | ID of the LINK type column in the current table, or the link dataType columnId for a LookUp column |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/linkRecordV2 \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '[\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 1,\n    \"tableId\": \"2815ed2f-5acc-400d-94a9-ae5596da2c37\",\n    \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  },\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 2,\n    \"tableId\": \"2815ed2f-5acc-400d-94a9-ae5596da2c37\",\n    \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  }\n]'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nLinks records between two tables via a LINK column.\nSupports:\n• Batch linking multiple record pairs in one request\n• sourceRecordId — PK of the record in the current table\n• destinationRecordId — PK of the record in the destination table\n• tableId — the current (source) table ID\n• linkColumnId — the LINK column ID or link dataType columnId for LookUp\n```"
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nLinks one or more records from a source table to records in a destination table via a LINK column. Supports batch linking of multiple record pairs in a single request.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/linkRecordV2\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| workbookId | UUID | ✅ Yes | Workbook identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n[\n  {\n    \"sourceRecordId\": integer,\n    \"destinationRecordId\": integer,\n      \"linkColumnId\": \"uuid\"\n  }\n]\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| sourceRecordId | integer | ✅ Yes | The row ID of the source record in the current table that you want to link to the destination record. |\n| destinationRecordId | integer | ✅ Yes | The row ID of the destination record in the linked table that you want to link to the source record. |\n|  linkColumnId | UUID | ✅ Yes | ID of the LINK type column in the current table, or the link dataType columnId for a LookUp column |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/linkRecordV2 \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '[\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 1,\n    \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  },\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 2,\n     \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  }\n]'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nLinks records between two tables via a LINK column.\nSupports:\n• Batch linking multiple record pairs in one request\n• sourceRecordId — PK of the record in the current table\n• destinationRecordId — PK of the record in the destination table\n•  linkColumnId — the LINK column ID or link dataType columnId for LookUp\n```"
       parameters:
         - name: workspaceId
           in: path
@@ -2467,6 +2565,13 @@ paths:
             type: string
             format: uuid
           description: Workspace identifier
+        - name: workbookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Workbook identifier
       requestBody:
         required: true
         content:
@@ -2478,7 +2583,6 @@ paths:
                 required:
                   - sourceRecordId
                   - destinationRecordId
-                  - tableId
                   - linkColumnId
                 properties:
                   sourceRecordId:
@@ -2487,10 +2591,6 @@ paths:
                   destinationRecordId:
                     type: integer
                     description: Primary key of the record in the destination table
-                  tableId:
-                    type: string
-                    format: uuid
-                    description: Current (source) table ID
                   linkColumnId:
                     type: string
                     format: uuid
@@ -2498,11 +2598,9 @@ paths:
             example:
               - sourceRecordId: 1
                 destinationRecordId: 1
-                tableId: 2815ed2f-5acc-400d-94a9-ae5596da2c37
                 linkColumnId: 21224153-2f85-4b24-a306-4cfbc7e73f70
               - sourceRecordId: 1
                 destinationRecordId: 2
-                tableId: 2815ed2f-5acc-400d-94a9-ae5596da2c37
                 linkColumnId: 21224153-2f85-4b24-a306-4cfbc7e73f70
       responses:
         '200':
@@ -2510,10 +2608,10 @@ paths:
     delete:
       summary: De-Link Records
       tags:
-        - WorkBook
+        - Links & Joins
       security:
         - bearerAuth: [ ]
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nRemoves existing links between records in a source table and records in a destination table. Supports batch de-linking of multiple record pairs in a single request.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nDELETE /noCo/api/v2/workspaces/{workspaceId}/tables/linkRecordV2\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n[\n  {\n    \"sourceRecordId\": integer,\n    \"destinationRecordId\": integer,\n    \"tableId\": \"uuid\",\n    \"linkColumnId\": \"uuid\"\n  }\n]\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| sourceRecordId | integer | ✅ Yes | Primary key of the record in the current (source) table |\n| destinationRecordId | integer | ✅ Yes | Primary key of the record in the destination table |\n| tableId | UUID | ✅ Yes | Current (source) table ID |\n| linkColumnId | UUID | ✅ Yes | LINK column ID or link dataType columnId |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X DELETE https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/linkRecordV2 \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '[\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 1,\n    \"tableId\": \"2815ed2f-5acc-400d-94a9-ae5596da2c37\",\n    \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  },\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 2,\n    \"tableId\": \"2815ed2f-5acc-400d-94a9-ae5596da2c37\",\n    \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  }\n]'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nRemoves links between records across tables.\nSupports:\n• Batch de-linking multiple record pairs in one request\n• sourceRecordId — PK of the record in the current table\n• destinationRecordId — PK of the record in the destination table\n• tableId — the current (source) table ID\n• linkColumnId — the LINK column ID or link dataType columnId\n```"
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nRemoves existing links between records in a source table and records in a destination table. Supports batch de-linking of multiple record pairs in a single request.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nDELETE /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/linkRecordV2\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| workbookId | UUID | ✅ Yes | Workbook identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n[\n  {\n    \"sourceRecordId\": integer,\n    \"destinationRecordId\": integer,\n    \"linkColumnId\": \"uuid\"\n  }\n]\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| sourceRecordId | integer | ✅ Yes | Primary key of the record in the current (source) table |\n| destinationRecordId | integer | ✅ Yes | Primary key of the record in the destination table |\n|  linkColumnId | UUID | ✅ Yes | LINK column ID or link dataType columnId |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X DELETE https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/linkRecordV2 \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '[\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 1,\n    \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  },\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 2,\n    \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  }\n]'\n```\n\n---\n\n## ```"
       parameters:
         - name: workspaceId
           in: path
@@ -2522,6 +2620,13 @@ paths:
             type: string
             format: uuid
           description: Workspace identifier
+        - name: workbookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Workbook identifier
       requestBody:
         required: true
         content:
@@ -2533,27 +2638,21 @@ paths:
                 required:
                   - sourceRecordId
                   - destinationRecordId
-                  - tableId
                   - linkColumnId
                 properties:
                   sourceRecordId:
                     type: integer
                   destinationRecordId:
                     type: integer
-                  tableId:
-                    type: string
-                    format: uuid
                   linkColumnId:
                     type: string
                     format: uuid
             example:
               - sourceRecordId: 1
                 destinationRecordId: 1
-                tableId: 2815ed2f-5acc-400d-94a9-ae5596da2c37
                 linkColumnId: 21224153-2f85-4b24-a306-4cfbc7e73f70
               - sourceRecordId: 1
                 destinationRecordId: 2
-                tableId: 2815ed2f-5acc-400d-94a9-ae5596da2c37
                 linkColumnId: 21224153-2f85-4b24-a306-4cfbc7e73f70
       responses:
         '200':
@@ -2562,7 +2661,7 @@ paths:
     get:
       summary: Get Link Data
       tags:
-        - WorkBook
+        - Links & Joins
       security:
         - bearerAuth: [ ]
       description: "## 1️⃣ Overview\n\n**Purpose:**\nRetrieves the linked records for a specific row via a LINK column. Given a source record's row ID, this returns all destination records that are linked to it through the specified link column.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nGET /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/{linkColumnId}/linkData?id={rowId}\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source table identifier |\n| linkColumnId | UUID | ✅ Yes | ID of the LINK column to fetch linked data for |\n\n---\n\n## 4️⃣ Query Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| id | integer | ✅ Yes | The row ID of the source record whose linked records you want to retrieve |\n\n---\n\n## 5️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 6️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 7️⃣ Example Request\n\n```bash\ncurl -X GET 'https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/{linkColumnId}/linkData?id=1' \\\n-H \"Authorization: Bearer <token>\"\n```\n\n---\n\n## 8️⃣ Behavior Summary\n\n```\nReturns all records linked to the specified source row via the given LINK column.\nSupports:\n• Fetching linked records for any LINK column type (HAS_MANY, ONE_TO_ONE, MANY_TO_MANY)\n• id query param — row ID of the source record in the current table\n• linkColumnId — identifies which link column's data to retrieve\n```"
