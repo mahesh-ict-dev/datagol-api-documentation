@@ -2370,6 +2370,111 @@ paths:
       responses:
         '200':
           description: Lookup column(s) created successfully
+  /noCo/api/v2/workspaces/{workspaceId}/tables/{workbook_id}/rows:
+    post:
+      summary: Add Row with Linked Records
+      tags:
+        - Links & Joins
+      security:
+        - bearerAuth: [ ]
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new row in the specified table and simultaneously links it to one or more records in associated tables via existing LINK columns.\n\nThis endpoint supports:\n- Setting cell values for the new row at creation time\n- Linking the new row to existing records in associated tables using `linkColumnId`\n- Multiple link relations can be established in a single request\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{workbook_id}/rows\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| workbook_id | UUID | ✅ Yes |  workbook where the row will be created |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"cellValues\": {\n    \"<columnName>\": \"<value>\"\n  },\n  \"linkRecords\": [\n    {\n      \"destinationRecordId\": \"integer\",\n      \"linkColumnId\": \"uuid\"\n    }\n  ]\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| cellValues | object | ✅ Yes | Key-value map of column names and their values for the new row |\n| cellValues.\\<columnName\\> | any | ❌ No | Value for a specific column — pass empty string or empty array if no value |\n| linkRecords | array | ❌ No | List of link operations to perform when creating the row |\n| linkRecords[].destinationRecordId | integer | ✅ Yes | PK of the record in the associated table to link to |\n| linkRecords[].linkColumnId | UUID | ✅ Yes | ID of the LINK column that defines the relation |"
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Workspace identifier
+        - name: workbook_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Target table identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cellValues
+              properties:
+                cellValues:
+                  type: object
+                  description: Key-value map of column names and their initial values for the new row
+                  additionalProperties:
+                    oneOf:
+                      - type: string
+                      - type: array
+                        items:
+                          type: string
+                linkRecords:
+                  type: array
+                  description: List of link operations to attach when creating the row
+                  items:
+                    type: object
+                    required:
+                      - destinationRecordId
+                      - linkColumnId
+                    properties:
+                      destinationRecordId:
+                        type: integer
+                        description: PK of the record in the associated table to link to
+                      linkColumnId:
+                        type: string
+                        format: uuid
+                        description: ID of the LINK column that defines the relation
+            example:
+              cellValues:
+                name: ""
+                notes: ""
+              linkRecords:
+                - destinationRecordId: 2
+                  linkColumnId: "ed7584c6-a33a-4779-b7bb-03a5d1345bb2"
+      responses:
+        '200':
+          description: Row created and linked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: Auto-generated primary key of the newly created row
+                  cellValues:
+                    type: object
+                    description: The column values stored for the new row
+                    additionalProperties:
+                      oneOf:
+                        - type: string
+                        - type: array
+                          items:
+                            type: string
+                  linkRecords:
+                    type: array
+                    description: Confirmation of link relations established
+                    items:
+                      type: object
+                      properties:
+                        destinationRecordId:
+                          type: integer
+                          description: PK of the linked record in the associated table
+                        linkColumnId:
+                          type: string
+                          format: uuid
+                          description: LINK column ID used to establish the relation
+              example:
+                id: 101
+                cellValues:
+                  name: ""
+                  notes: ""
+                linkRecords:
+                  - destinationRecordId: 2
+                    linkColumnId: "ed7584c6-a33a-4779-b7bb-03a5d1345bb2"
   /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/linkTables:
     get:
       summary: Get All Link Tables of Current Table
