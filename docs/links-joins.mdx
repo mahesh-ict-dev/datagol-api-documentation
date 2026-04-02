@@ -39,13 +39,14 @@ A LINK column stores metadata for:
 | `associatedTableId` | Associated (linked) table |
 | `relationType` | Type of relationship |
 | `linkColumnId` | Link column identifier |
+| `associateWorkspaceId`| Associated Workspace identifier |
 
 **Supported relation patterns:**
 
 | Pattern | Description |
 |---|---|
 | `ONE_TO_ONE` | Each record in the source maps to one record in the destination |
-| `ONE_TO_MANY` | One source record maps to many destination records |
+| `HAS_MANY` | One source record maps to many destination records |
 | `MANY_TO_MANY` | Many source records map to many destination records |
 
 ---
@@ -68,7 +69,8 @@ Use `colOptions` to persist link/lookup metadata.
 |---|---|
 | `columnId` | Current column ID |
 | `tableId` | Current table ID |
-| `associatedTableId` | Associated table ID |
+| `associatedTableId` | Associated workbook ID |
+| `associateWorkspaceId` | Associated workspace ID for the destination workbook|
 | `linkColumnId` | Link column ID — used by LOOKUP; references the LINK column's `columnId` |
 | `relationType` | Relation semantics for LINK |
 
@@ -80,7 +82,7 @@ To create manual record-level links:
 
 <Steps>
   <Step title="Fetch Schema">
-    Fetch the associated table schema and data.
+    Fetch the associated workbook schema and data using the associate workspace Id.
   </Step>
   <Step title="Select Record">
     User selects associated record(s) to link.
