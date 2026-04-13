@@ -331,44 +331,118 @@ paths:
       tags:
         - Workspaces
       description: "## 1️⃣ Overview\n\n**Purpose:**  \nRetrieves the list of all workspaces accessible to the authenticated user or service account.\n\n---\n\n## 2️⃣ Endpoint\n\n``` bash\nGET /noCo/api/v2/workspaces\n\n```\n\n---\n\n## 3️⃣ Authentication\n\nRequires Bearer-style authentication using:\n\n```\nAuthorization: Bearer <token>\n\n```\n\n---\n\n## 4️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n\n---\n\n## 5️⃣ Example Request\n\n``` bash\ncurl -X GET https://be.datagol.ai/noCo/api/v2/workspaces \\\n-H \"Authorization: Bearer <token>\"\n\n```\n\n---\n\n## 6️⃣ Behavior Summary\n\nThis endpoint returns all workspaces that are accessible to the authenticated user or service account.\n\nIt supports workspace-level access control and filters results based on user permissions."
+
+  /idp/api/v1/user/sign-up:
+    post:
+      summary: User Sign Up
+      tags:
+        - Sign up
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nRegisters a new user account. Supports two sign-up flows:\n\n- **Self Registration** — User registers independently. No hash required. An OTP is sent to the email for verification.\n\n- **Workspace Invitation** — User was invited to a workspace via email. The invitation `hash` (received in the invitation email) must be provided along with name and password.\n\n---\n\n## 2️⃣ Endpoint\n\n``` bash\nPOST /idp/api/v1/user/sign-up\n```\n\n---\n\n## 3️⃣ Authentication\n\nNo authentication required. This is a public endpoint.\n\n---\n\n## 4️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 5️⃣ Request Body Schema\n\n``` json\n{\n  \"email\": \"string\",\n  \"password\": \"string\",\n  \"firstname\": \"string\",\n  \"lastname\": \"string\",\n  \"hash\": \"string\"\n}\n```\n\n---\n\n## 6️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| email | string | ✅ Yes | User's email address |\n| password | string | ✅ Yes | Min 8 chars, must include uppercase, lowercase, number, and special character |\n| firstname | string | ✅ Yes | User's first name |\n| lastname | string | ✅ Yes | User's last name |\n| hash | string | ⚠️ Conditional | Required only for workspace invitation flow. UUID received in the invitation email. Must be omitted for self-registration. |\n\n---\n\n## 7️⃣ Sign-Up Flows\n\n### 🔵 Self Registration\n\n```json\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"Demo12#$\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\"\n}\n```\n\n- No `hash` required\n- OTP is sent to the provided email\n- User must verify email via `/idp/api/v1/user/signUp/verifyEmailOtp`\n\n### 🟢 Workspace Invitation\n\n```json\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"Demo12#$\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\",\n  \"hash\": \"e0754cfc-f7d1-4cc3-8690-e34a2f17291d\"\n}\n```\n\n- `hash` is mandatory and must match the one received in the invitation email\n- User is directly linked to the inviting workspace upon successful registration\n\n---\n\n## 8️⃣ Behavior Summary\n\n```\n• Self Registration — OTP is dispatched to the email. Account is pending until OTP is verified.\n• Workspace Invitation — Hash is validated against the invitation. Account is activated and linked to the workspace.\n• Password Policy — Enforced for both flows.\n```\n\n---\n\n## 📌 Additional Notes\n\n- For self-registration, the OTP verification step is mandatory to activate the account.\n- For workspace invitation, the `hash` is single-use and time-limited.\n- `firstname` and `lastname` are required for both flows."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstname
+                - lastname
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                password:
+                  type: string
+                  format: password
+                  description: Must include uppercase, lowercase, number, and special character.
+                  minLength: 8
+                firstname:
+                  type: string
+                  description: User's first name
+                lastname:
+                  type: string
+                  description: User's last name
+                hash:
+                  type: string
+                  format: uuid
+                  description: Invitation hash received in the workspace invitation email. Required only for workspace invitation flow.
+            examples:
+              SelfRegistration:
+                summary: Self Registration (no hash)
+                value:
+                  email: demo@abc.com
+                  password: PasswordDemo1
+                  firstname: John
+                  lastname: Peter
+              WorkspaceInvitation:
+                summary: Workspace Invitation (with hash)
+                value:
+                  email: demo@abc.com
+                  password: PasswordDemo1
+                  firstname: John
+                  lastname: Peter
+                  hash: XXXX-XXX-XXXXX
+      responses:
+        '200':
+          description: "Self Registration: User registered successfully and OTP sent to email. | Workspace Invitation: User registered and linked to the workspace."
+        '400':
+          description: Bad Request — Invalid input, missing required fields, or invalid/expired hash
+        '409':
+          description: Conflict — Email already exists
+        '500':
+          description: Internal Server Error
+
+  /idp/api/v1/user/signUp/verifyEmailOtp:
+    post:
+      summary: Verify Email OTP for Sign Up
+      tags:
+        - Sign up
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nVerifies the OTP sent to the user's email as the second step of the **self-registration flow**. On successful verification, the user's account is activated.\n\n> ⚠️ This endpoint is only applicable for the **Self Registration** flow. Users who signed up via a **Workspace Invitation** (with a hash) do not need to complete this step.\n\n---\n\n## 2️⃣ Endpoint\n\n``` bash\nPOST /idp/api/v1/user/signUp/verifyEmailOtp\n```\n\n---\n\n## 3️⃣ Authentication\n\nNo authentication required. This is a public endpoint.\n\n---\n\n## 4️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 5️⃣ Request Body Schema\n\n``` json\n{\n  \"email\": \"string\",\n  \"otp\": \"string\"\n}\n```\n\n---\n\n## 6️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| email | string | ✅ Yes | Must match the email used in the sign-up request |\n| otp | string | ✅ Yes | One-time password sent to the user's email after sign-up |\n\n---\n\n## 7️⃣ Behavior Summary\n\n```\nSecond step of the Self Registration flow.\n• OTP Validation — The OTP must match the one dispatched during sign-up.\n• Account Activation — On successful verification, the user account is fully activated.\n• OTP Expiry — OTP is time-limited. If expired, the user must re-initiate the sign-up.\n• Flow Specific — Only applicable for self-registered users. Invitation-based users are activated immediately upon sign-up.\n```\n\n---\n\n## 📌 Additional Notes\n\n- This is **Step 2** of the self-registration flow. Step 1 is `POST /idp/api/v1/user/sign-up`.\n- The email must exactly match the one used during sign-up.\n- Workspace invitation users skip this step entirely as their account is activated via hash validation."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address used during sign-up
+                otp:
+                  type: string
+                  description: One-time password sent to the user's email after sign-up
+                  example: '157746'
+            example:
+              email: demo@abc.com
+              otp: '157746'
+      responses:
+        '200':
+          description: OTP verified successfully — account activated
+        '400':
+          description: Bad Request — Invalid or expired OTP
+        '404':
+          description: Not Found — Email not registered
+        '500':
+          description: Internal Server Error
+
   /noCo/api/v2/workspaces/{workspaceId}/bulkUsers:
     post:
-      summary: Add Service Email to Workspace
+      summary: Add User to Workspace
       security:
         - bearerAuth: [ ]
       responses:
         '200':
-          description: Add Service Email to Workspace
+          description: Add User to Workspace
       tags:
         - Workspaces
-      description: "## 1\uFE0F\u20E3 Overview\n\n**Purpose:**  \nAllows adding multiple\
-        \ users to a specific workspace in a single request.\n\nEach user is assigned\
-        \ a role within the workspace.\n\n---\n\n## 2\uFE0F\u20E3 Endpoint\n\n```\
-        \ bash\nPOST /noCo/api/v2/workspaces/{workspaceId}/bulkUsers\n\n ```\n\n---\n\
-        \n## 3\uFE0F\u20E3 Path Parameters\n\n| Parameter | Type | Required | Description\
-        \ |\n| --- | --- | --- | --- |\n| workspaceId | UUID | \u2705 Yes | Identifier\
-        \ of the workspace |\n\n---\n\n## 4\uFE0F\u20E3 Authentication\n\nRequires\
-        \ authentication using:\n\n``` id=\"k6rj3w\"\nAuthorization: Bearer <token>\n\n ```\n\
-        \n---\n\n## 5\uFE0F\u20E3 Request Headers\n\n| Header | Required |\n| ---\
-        \ | --- |\n| Authorization | \u2705 Yes |\n| Content-Type: application/json\
-        \ | \u2705 Yes |\n\n---\n\n## 6\uFE0F\u20E3 Request Body Schema\n\n``` json\n\
-        {\n  \"workSpaceUsers\": [\n    {\n      \"email\": \"string\",\n      \"\
-        role\": \"string\"\n    }\n  ],\n  \"message\": \"string\"\n}\n\n ```\n\n\
-        ---\n\n## 7\uFE0F\u20E3 Field Descriptions\n\n### Workspace Users\n\n| Parameter\
-        \ | Type | Required | Description |\n| --- | --- | --- | --- |\n| workSpaceUsers\
-        \ | array | \u2705 Yes | List of users to be added to the workspace |\n| workSpaceUsers.email\
-        \ | string | \u2705 Yes | Email ID of the user |\n| workSpaceUsers.role |\
-        \ string | \u2705 Yes | Role assigned in the workspace (CREATOR, EDITOR, VIEWER)\
-        \ |\n| message | string | \u274C No | Optional message sent along with the\
-        \ invite |\n\n---\n\n## 8\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X\
-        \ POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/bulkUsers\
-        \ \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"\
-        \ \\\n-d '{\n  \"workSpaceUsers\": [\n    {\n      \"email\": \"user1@datagol.com\"\
-        ,\n      \"role\": \"EDITOR\"\n    },\n    {\n      \"email\": \"user2@datagol.com\"\
-        ,\n      \"role\": \"VIEWER\"\n    }\n  ],\n  \"message\": \"Workspace access\
-        \ invitation\"\n}'\n\n ```\n\n---\n\n## 9\uFE0F\u20E3 Behavior Summary\n\n\
-        Enables bulk addition of users to a workspace and assigns roles to each user.\n\
-        \nSupports workspace invitation messaging."
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nAllows adding multiple users to a specific workspace in a single request.\n\nEach user is assigned a role within the workspace.\n\nUpon being added, the invited user receives an email containing a registration link with a unique `hash` and `type` as query parameters:\n\n```\nhttp://<app-domain>/register?hash=e0754cfc-f7d1-4cc3-8690-e34a2f17291d&type=WORK_SPACE\n```\n\n- `hash` — A unique UUID tied to the workspace invitation. Must be passed in the sign-up API to complete registration.\n- `type` — Indicates the invitation context. `WORK_SPACE` means the user is being invited to a workspace.\n\n---\n\n## 2️⃣ Endpoint\n\n``` bash\nPOST /noCo/api/v2/workspaces/{workspaceId}/bulkUsers\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Identifier of the workspace |\n\n---\n\n## 4️⃣ Authentication\n\nRequires authentication using:\n\n``` bash\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n``` json\n{\n  \"workSpaceUsers\": [\n    {\n      \"email\": \"string\",\n      \"role\": \"string\"\n    }\n  ],\n  \"message\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n### Workspace Users\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workSpaceUsers | array | ✅ Yes | List of users to be added to the workspace |\n| workSpaceUsers.email | string | ✅ Yes | Email ID of the user |\n| workSpaceUsers.role | string | ✅ Yes | Role assigned in the workspace (CREATOR, EDITOR, VIEWER) |\n| message | string | ❌ No | Optional message sent along with the invite |\n\n---\n\n## 8️⃣ Invitation Flow\n\nOnce this API is called successfully, the invited user receives an email with a registration link:\n\n```\nhttp://<app-domain>/register?hash=e0754cfc-f7d1-4cc3-8690-e34a2f17291d&type=WORK_SPACE\n```\n\nThe user must use this link to complete their registration by calling:\n\n```\nPOST /idp/api/v1/user/sign-up\n```\n\nWith the `hash` extracted from the link:\n\n``` json\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"Demo12#$\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\",\n  \"hash\": \"e0754cfc-f7d1-4cc3-8690-e34a2f17291d\"\n}\n```\n\n> ⚠️ The `hash` is single-use and time-limited. If expired, the workspace admin must re-invite the user.\n\n---\n\n## 9️⃣ Example Request\n\n``` bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/bulkUsers \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"workSpaceUsers\": [\n    {\n      \"email\": \"user1@datagol.com\",\n      \"role\": \"EDITOR\"\n    },\n    {\n      \"email\": \"user2@datagol.com\",\n      \"role\": \"VIEWER\"\n    }\n  ],\n  \"message\": \"Workspace access invitation\"\n}'\n```\n\n---\n\n## 🔟 Behavior Summary\n\n```\nEnables bulk addition of users to a workspace and assigns roles to each user.\n• Role Assignment — Each user is assigned CREATOR, EDITOR, or VIEWER role.\n• Invitation Email — Each invited user receives an email with a registration link containing a unique hash and type=WORK_SPACE.\n• Hash-Based Registration — The invited user must use the hash from the email link to complete sign-up via POST /idp/api/v1/user/sign-up.\n• OTP Not Required — Workspace-invited users are activated via hash validation and do not go through the OTP verification step.\n```"
       requestBody:
         content:
           application/json:
@@ -385,13 +459,18 @@ paths:
                         format: email
                       role:
                         type: string
+                        enum:
+                          - CREATOR
+                          - EDITOR
+                          - VIEWER
                 message:
                   type: string
             example:
               workSpaceUsers:
-                - email: datagol-bd4ffdd8@inncretech.iam.serviceaccount.com
-                  role: CREATOR
-              message: ''
+                - email: user1@datagol.com
+                  role: EDITOR
+                - email: user2@datagol.com
+                  role: VIEWER
     parameters:
       - name: workspaceId
         in: path
@@ -399,6 +478,7 @@ paths:
         schema:
           type: string
         example: '{{workspaceId}}'
+
   /noCo/api/v2/workspaces/{workspaceId}/extraction/schema/generate:
     post:
       summary: Generate Schema for Advanced Extraction
