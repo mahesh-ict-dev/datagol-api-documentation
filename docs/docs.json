@@ -1,5 +1,9 @@
 {
   "name": "DataGOL API Docs",
+  "logo": {
+    "light": "/logo.svg",
+    "dark": "/logo-dark.svg"
+  },
   "favicon": "favicon.ico",
   "theme": "mint",
   "colors": {

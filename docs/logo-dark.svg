@@ -1,0 +1,33 @@
+<svg width="400" height="100" viewBox="0 0 400 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5A4FCF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B37CF;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <rect x="8" y="8" width="84" height="84" rx="20" ry="20" fill="url(#purpleGradient)"/>
+
+  <circle cx="28" cy="28" r="4" fill="white"/>
+  <circle cx="50" cy="28" r="4" fill="white"/>
+  <circle cx="72" cy="28" r="4" fill="white"/>
+  <circle cx="28" cy="50" r="4" fill="white"/>
+  <circle cx="50" cy="50" r="6" fill="white"/>
+  <circle cx="72" cy="50" r="4" fill="white"/>
+  <circle cx="28" cy="72" r="4" fill="white"/>
+  <circle cx="50" cy="72" r="4" fill="white"/>
+  <circle cx="72" cy="72" r="4" fill="white"/>
+
+  <line x1="28" y1="28" x2="50" y2="50" stroke="white" stroke-width="2" opacity="0.8"/>
+  <line x1="50" y1="28" x2="50" y2="50" stroke="white" stroke-width="2" opacity="0.8"/>
+  <line x1="72" y1="28" x2="50" y2="50" stroke="white" stroke-width="2" opacity="0.8"/>
+  <line x1="28" y1="50" x2="50" y2="50" stroke="white" stroke-width="2" opacity="0.8"/>
+  <line x1="72" y1="50" x2="50" y2="50" stroke="white" stroke-width="2" opacity="0.8"/>
+  <line x1="28" y1="72" x2="50" y2="50" stroke="white" stroke-width="2" opacity="0.8"/>
+  <line x1="50" y1="72" x2="50" y2="50" stroke="white" stroke-width="2" opacity="0.8"/>
+  <line x1="72" y1="72" x2="50" y2="50" stroke="white" stroke-width="2" opacity="0.8"/>
+  <line x1="28" y1="28" x2="28" y2="72" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="72" y1="28" x2="72" y2="72" stroke="white" stroke-width="2" opacity="0.6"/>
+
+  <text x="110" y="65" font-family="Arial, sans-serif" font-size="42" font-weight="bold" fill="white">DataGOL</text>
+</svg>
