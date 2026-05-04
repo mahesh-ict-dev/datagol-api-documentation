@@ -1,8 +1,7 @@
 /* DataGOL API Docs – custom polish */
 
 /* Softer, more readable API reference sections */
-[data-theme="light"] .api-reference,
-[data-theme="dark"] .api-reference {
+[data-theme="light"] .api-reference {
   --card-radius: 12px;
   --block-spacing: 1.25rem;
 }
