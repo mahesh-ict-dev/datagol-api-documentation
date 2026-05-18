@@ -775,7 +775,7 @@ paths:
           description: User lacks VIEW_COPILOT permission.
     post:
       summary: Create a Custom Agent
-      description: Creates a fully configured Custom AI Agent with data sources, MCP tool servers, sub-agents, voice, skills, and UI behavior. Returns the created agent with its generated UUID.
+      description: Creates a Custom AI Agent with the specified data sources, MCP tool servers, skills, and UI configuration. Returns the new agent record including its UUID.
       operationId: createCustomAgent
       tags:
         - Custom Agents
