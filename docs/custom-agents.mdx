@@ -158,6 +158,107 @@ curl 'https://testing-be.datagol.ai/noCo/api/v2/workspaces' \
 
 ---
 
+#### GET Search Workspaces and Workbooks
+
+**`GET /noCo/api/v2/workspaces/search`**
+
+Used by the **Knowledge Base** section in the agent builder UI. Returns a flat list of all workbooks (type `TABLE`) across every workspace the authenticated user can access. Group the results by `workspaceId` / `workspaceName` to render the workspace → workbook tree shown in the UI.
+
+<Info>
+  This is the endpoint you should call when populating the workbook picker. Unlike `GET /noCo/api/v2/workspaces` (which returns workspace metadata only), this endpoint returns the individual workbooks inside each workspace in a single call.
+</Info>
+
+**Query parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | string | No | Free-text filter on workbook / workspace name. Pass empty string or omit for all. |
+| `type` | string | **Yes** | Must be `TABLE` to retrieve workbooks. |
+
+<CodeGroup>
+```bash cURL
+curl 'https://testing-be.datagol.ai/noCo/api/v2/workspaces/search?query=&type=TABLE' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json'
+```
+</CodeGroup>
+
+**Response** — flat array of workbook objects. Each item carries the parent `workspaceId` and `workspaceName` so you can group them client-side.
+
+**Response item fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | UUID | Workbook UUID — use as `id` in `WORKBOOK_RAG` connector objects |
+| `name` | string | Workbook display name |
+| `description` | string | Optional content description |
+| `workspaceId` | UUID | Parent workspace UUID — use to group workbooks by workspace |
+| `workspaceName` | string | Parent workspace display name |
+| `workspaceCreatedBy` | integer | User ID of the workspace owner |
+| `tableCreatedBy` | integer | User ID who created the workbook |
+| `uiMetadata.dataProvider` | string | Storage backend: `JDBC`, `SPARK`, `SNOWFLAKE`, `BIGQUERY`, `REDSHIFT`, `ATHENA`, `MYSQL` |
+| `uiMetadata.title` | string | Optional display title override |
+| `uiMetadata.favorite` | boolean | Whether the workbook is marked as a favourite |
+
+**Example response (trimmed):**
+
+```json
+[
+  {
+    "type": "TABLE",
+    "isFolder": false,
+    "id": "ec345675-06bf-4133-b8c3-f8fc1934b839",
+    "name": "dg_order_item.csv",
+    "description": "",
+    "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+    "workspaceName": "Link_v2",
+    "workspaceCreatedBy": 371,
+    "tableCreatedBy": 371,
+    "uiMetadata": { "dataProvider": "JDBC" }
+  },
+  {
+    "type": "TABLE",
+    "isFolder": false,
+    "id": "ca45078d-ed26-4752-a7a7-4aed24af033c",
+    "name": "dg_Order.csv",
+    "description": "",
+    "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+    "workspaceName": "Link_v2",
+    "workspaceCreatedBy": 371,
+    "tableCreatedBy": 371,
+    "uiMetadata": { "dataProvider": "JDBC" }
+  },
+  {
+    "type": "TABLE",
+    "isFolder": false,
+    "id": "bb3f3d22-bdef-45ec-8723-08f874e42247",
+    "name": "Airbnb - SNOWFLAKE",
+    "description": "",
+    "workspaceId": "c50161cf-14dd-42a5-9b62-f8b6d89b48e9",
+    "workspaceName": "BI Sanity (Bi team only)",
+    "workspaceCreatedBy": 280,
+    "tableCreatedBy": 41,
+    "uiMetadata": { "dataProvider": "SNOWFLAKE" }
+  }
+  // ... more workbooks grouped across workspaces
+]
+```
+
+<Tip>
+  To build the workspace → workbook tree, reduce the flat array by `workspaceId`:
+  ```js
+  const tree = results.reduce((acc, item) => {
+    const ws = acc[item.workspaceId] ?? { name: item.workspaceName, workbooks: [] };
+    ws.workbooks.push({ id: item.id, name: item.name });
+    acc[item.workspaceId] = ws;
+    return acc;
+  }, {});
+  ```
+  The workbook `id` can then be used directly as the connector `id` in `WORKBOOK_RAG` objects.
+</Tip>
+
+---
+
 #### GET List All Connectors
 
 **`GET /connector/api/v1/instance`**

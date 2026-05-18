@@ -21,6 +21,75 @@ components:
       bearerFormat: JWT
       description: 'JWT token issued by the DataGOL Identity Provider. Embed `Authorization: Bearer <token>` in every request. Tokens contain `companyId`, `userId`, `roles`, and `permissions` claims.'
   schemas:
+    WorkbookSearchItem:
+      type: object
+      description: A single workbook (TABLE) entry returned by the workspace search endpoint.
+      properties:
+        type:
+          type: string
+          enum:
+            - TABLE
+          description: Always TABLE for workbook entries.
+          example: TABLE
+        isFolder:
+          type: boolean
+          description: Always false for workbook entries. Folder entries are not returned.
+          example: false
+        id:
+          type: string
+          format: uuid
+          description: UUID of the workbook. Use this as the connector id in WORKBOOK_RAG objects.
+          example: ec345675-06bf-4133-b8c3-f8fc1934b839
+        name:
+          type: string
+          description: Display name of the workbook.
+          example: dg_order_item.csv
+        description:
+          type: string
+          nullable: true
+          description: Optional description of the workbook content.
+          example: ''
+        workspaceId:
+          type: string
+          format: uuid
+          description: UUID of the workspace this workbook belongs to. Use to group workbooks by workspace.
+          example: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+        workspaceName:
+          type: string
+          description: Display name of the parent workspace.
+          example: Link_v2
+        workspaceCreatedBy:
+          type: integer
+          description: User ID who created the workspace.
+          example: 371
+        tableCreatedBy:
+          type: integer
+          description: User ID who created the workbook.
+          example: 371
+        uiMetadata:
+          type: object
+          description: Display metadata for the workbook.
+          properties:
+            dataProvider:
+              type: string
+              description: Data provider / engine backing this workbook.
+              enum:
+                - JDBC
+                - SPARK
+                - SNOWFLAKE
+                - BIGQUERY
+                - REDSHIFT
+                - ATHENA
+                - MYSQL
+              example: JDBC
+            title:
+              type: string
+              description: Optional display title override (if different from name).
+              example: dg_order_item.csv
+            favorite:
+              type: boolean
+              description: Whether this workbook is marked as a favourite.
+              example: false
     ConnectorWorkbookRag:
       type: object
       required:
@@ -1045,6 +1114,87 @@ paths:
           description: Permissions applied successfully.
         '403':
           description: User lacks ASSIGN_ROLES permission.
+  /noCo/api/v2/workspaces/search:
+    get:
+      summary: Search Workspaces and Workbooks
+      description: >-
+        Returns a flat list of workbook entries (type=TABLE) across all workspaces
+        accessible to the authenticated user. Used by the Knowledge Base section in
+        the agent builder UI to let users browse workspaces and select individual
+        workbooks. Group results by `workspaceId` / `workspaceName` to reconstruct
+        the workspace → workbook hierarchy for display. The `id` of each item is the
+        workbook UUID to use in `WORKBOOK_RAG` connector objects.
+      operationId: searchWorkspacesAndWorkbooks
+      tags:
+        - Reference Data
+      parameters:
+        - name: query
+          in: query
+          required: false
+          schema:
+            type: string
+            default: ''
+          description: >-
+            Optional free-text filter. Matches against workbook and workspace names.
+            Pass an empty string (or omit) to return all workbooks.
+          example: ''
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - TABLE
+          description: >-
+            Resource type to search for. Must be `TABLE` to retrieve workbooks.
+          example: TABLE
+      responses:
+        '200':
+          description: Flat array of workbook items. Group by `workspaceId` to build the workspace → workbook hierarchy.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkbookSearchItem'
+              example:
+                - type: TABLE
+                  isFolder: false
+                  id: ec345675-06bf-4133-b8c3-f8fc1934b839
+                  name: dg_order_item.csv
+                  description: ''
+                  workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                  workspaceName: Link_v2
+                  workspaceCreatedBy: 371
+                  tableCreatedBy: 371
+                  uiMetadata:
+                    dataProvider: JDBC
+                - type: TABLE
+                  isFolder: false
+                  id: ca45078d-ed26-4752-a7a7-4aed24af033c
+                  name: dg_Order.csv
+                  description: ''
+                  workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                  workspaceName: Link_v2
+                  workspaceCreatedBy: 371
+                  tableCreatedBy: 371
+                  uiMetadata:
+                    dataProvider: JDBC
+                - type: TABLE
+                  isFolder: false
+                  id: bb3f3d22-bdef-45ec-8723-08f874e42247
+                  name: Airbnb - SNOWFLAKE
+                  description: ''
+                  workspaceId: c50161cf-14dd-42a5-9b62-f8b6d89b48e9
+                  workspaceName: BI Sanity (Bi team only)
+                  workspaceCreatedBy: 280
+                  tableCreatedBy: 41
+                  uiMetadata:
+                    dataProvider: SNOWFLAKE
+        '401':
+          description: Missing or expired JWT token.
+        '403':
+          description: User lacks VIEW_LAKEHOUSE permission.
   /noCo/api/v2/workspaces:
     get:
       summary: List All Workspaces
