@@ -755,7 +755,7 @@ components:
 paths:
   /customAgents/api/v1:
     get:
-      summary: List all Custom Agents
+      summary: List All Custom Agents
       description: Returns all Custom Agents accessible to the authenticated user within their company tenant.
       operationId: listCustomAgents
       tags:
@@ -993,7 +993,7 @@ paths:
           description: Agent not found in this tenant.
   /noCo/api/v2/elementPermissions/{elementType}/{agentId}:
     get:
-      summary: Get Custom Agent permissions
+      summary: Get Custom Agent Permissions
       description: Returns all users who have access to the specified agent and their permission levels.
       operationId: getAgentPermissions
       tags:
@@ -1023,7 +1023,7 @@ paths:
           description: User lacks VIEW_COPILOT permission.
   /noCo/api/v2/elementPermissions/bulk:
     post:
-      summary: Share agent with team members
+      summary: Share Agent with Team Members
       description: Grants one or more users access to a Custom Agent in a single atomic operation. Supports VIEWER, EDITOR, and CREATOR permission levels.
       operationId: bulkShareAgent
       tags:
@@ -1047,7 +1047,7 @@ paths:
           description: User lacks ASSIGN_ROLES permission.
   /noCo/api/v2/workspaces:
     get:
-      summary: List all workspaces
+      summary: List All Workspaces
       description: Returns all workspaces in the company tenant. Use workspace id values as workspaceId in WORKBOOK_RAG and WORKSPACE_DOCUMENTS connector objects.
       operationId: listWorkspaces
       tags:
@@ -1057,7 +1057,7 @@ paths:
           description: Array of workspace objects.
   /noCo/api/v2/workspaces/{workspaceId}:
     get:
-      summary: Get workspace by ID (side panel context)
+      summary: Get Workspace by ID
       description: Fetches workspace details scoped to a Custom Agent. Called when a user opens the agent from the side panel to load context-specific workspace data.
       operationId: getWorkspaceById
       tags:
@@ -1092,7 +1092,7 @@ paths:
           description: Workspace details scoped to the agent.
   /connector/api/v1/instance:
     get:
-      summary: List all AI connectors
+      summary: List All AI Connectors
       description: Returns all AI connector instances available to the tenant. Use the id values (as strings) in configs.connectors for CONNECTOR type entries.
       operationId: listConnectors
       tags:
@@ -1102,7 +1102,7 @@ paths:
           description: Array of connector instance objects.
   /idp/api/v1/team:
     get:
-      summary: List team members
+      summary: List Team Members
       description: Returns all users in the company. Use userId values when sharing an agent via the bulk permissions endpoint.
       operationId: listTeamMembers
       tags:
@@ -1112,7 +1112,7 @@ paths:
           description: Array of user objects.
   /ai/api/v2/conversations:
     get:
-      summary: List all conversations
+      summary: List All Conversations
       description: Returns the list of all conversations for the authenticated user.
       operationId: listConversations
       tags:
@@ -1121,7 +1121,7 @@ paths:
         '200':
           description: Array of conversation objects.
     post:
-      summary: Initiate a conversation
+      summary: Initiate a Conversation
       description: Opens a new conversation session backed by a Custom Agent. Returns the conversationId required for the streaming endpoint.
       operationId: initiateConversation
       tags:
@@ -1168,7 +1168,7 @@ paths:
                     type: boolean
   /ai/api/v2/messages/streaming:
     post:
-      summary: Stream a message to the agent
+      summary: Stream a Message to the Agent
       description: 'Sends a user message and streams the AI response as Server-Sent Events (SSE). This endpoint is on the AI Core service (testing-core-ai.datagol.ai). Requires the `credentials: include` header.'
       operationId: streamMessage
       tags:
@@ -1201,7 +1201,7 @@ paths:
                 type: string
   /ai/api/v1/builder/chat/complete:
     post:
-      summary: Generate conversation name
+      summary: Generate Conversation Name
       description: 'Step 3 in the conversation lifecycle. Generates a concise ≤5-word conversation name from the user''s first message using `gpt-4o-mini` and a structured tool call. Called client-side the moment the user submits their first message — before the conversation record is created — so the UI can display a meaningful title immediately. The `generate_conversation_name` tool is forced via `tool_choice: auto`.'
       operationId: generateConversationName
       tags:

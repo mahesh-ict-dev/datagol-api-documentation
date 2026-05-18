@@ -21,6 +21,7 @@ Thumbs.db
 .mintlify/
 out/
 dist/
+_site/
 .next/
 
 # Logs
@@ -31,3 +32,4 @@ yarn-error.log*
 # Optional
 *.log
 .cache
+.gstack/
