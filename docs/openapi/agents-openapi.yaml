@@ -1118,12 +1118,14 @@ paths:
     get:
       summary: Search Workspaces and Workbooks
       description: >-
-        Returns a flat list of workbook entries (type=TABLE) across all workspaces
-        accessible to the authenticated user. Used by the Knowledge Base section in
-        the agent builder UI to let users browse workspaces and select individual
-        workbooks. Group results by `workspaceId` / `workspaceName` to reconstruct
-        the workspace → workbook hierarchy for display. The `id` of each item is the
-        workbook UUID to use in `WORKBOOK_RAG` connector objects.
+        Returns a flat list of workbook entries (`type=TABLE`) across all workspaces
+        accessible to the authenticated user.
+
+
+        Each item includes a `workspaceId`, `workspaceName`, and a workbook `id`
+        (UUID). Group results by `workspaceId` / `workspaceName` to reconstruct the
+        workspace → workbook hierarchy. Use the workbook `id` as the reference in
+        `WORKBOOK_RAG` connector objects.
       operationId: searchWorkspacesAndWorkbooks
       tags:
         - Reference Data
