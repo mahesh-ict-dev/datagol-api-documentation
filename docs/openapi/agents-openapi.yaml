@@ -1,0 +1,1263 @@
+openapi: 3.1.0
+info:
+  title: DataGOL Custom Agents API
+  description: Complete API for creating, configuring, sharing, and interacting with Custom AI Agents on the DataGOL platform. Covers agent CRUD, permissions, conversations, and streaming.
+  version: 1.0.0
+  contact:
+    name: DataGOL Support
+    url: https://datagol.ai
+servers:
+  - url: https://testing-be.datagol.ai
+    description: Backend API — agent management, conversations, permissions
+  - url: https://testing-core-ai.datagol.ai
+    description: AI Core — streaming, chat completion, conversation naming
+security:
+  - BearerAuth: []
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'JWT token issued by the DataGOL Identity Provider. Embed `Authorization: Bearer <token>` in every request. Tokens contain `companyId`, `userId`, `roles`, and `permissions` claims.'
+  schemas:
+    ConnectorWorkbookRag:
+      type: object
+      required:
+        - id
+        - type
+        - sourceType
+        - data
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID of the workbook file within the workspace.
+          example: ec345675-06bf-4133-b8c3-f8fc1934b839
+        type:
+          type: string
+          enum:
+            - WORKBOOK_RAG
+          description: RAG over a single workbook file (CSV, Excel, etc.).
+        sourceType:
+          type: string
+          enum:
+            - BACKEND
+          description: Data is indexed and served by the DataGOL backend.
+        data:
+          type: object
+          required:
+            - title
+            - workspaceId
+            - workspaceName
+          properties:
+            title:
+              type: string
+              description: Display name of the workbook file.
+              example: dg_order_item.csv
+            description:
+              type: string
+              description: Optional description of the file content.
+              example: ''
+            workspaceId:
+              type: string
+              format: uuid
+              description: UUID of the workspace containing this workbook.
+              example: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+            workspaceName:
+              type: string
+              description: Display name of the workspace.
+              example: Link_v2
+    ConnectorWorkspaceDocuments:
+      type: object
+      required:
+        - id
+        - type
+        - sourceType
+        - data
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID of the workspace. All documents in it become searchable.
+          example: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+        type:
+          type: string
+          enum:
+            - WORKSPACE_DOCUMENTS
+          description: RAG over all documents in an entire workspace.
+        sourceType:
+          type: string
+          enum:
+            - BACKEND
+        data:
+          type: object
+          required:
+            - name
+          properties:
+            name:
+              type: string
+              description: Display name of the workspace.
+              example: Link_v2
+    KnowledgeBaseRun:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        connectorId:
+          type: string
+          format: uuid
+        runType:
+          type: string
+          enum:
+            - INCREMENTAL
+            - FULL
+        status:
+          type: string
+          enum:
+            - SUCCESS
+            - FAILED
+            - RUNNING
+        temporalWorkflowId:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        finishedAt:
+          type: string
+          format: date-time
+        errorMessage:
+          type: string
+          nullable: true
+        statsJson:
+          type: object
+          example:
+            total: 49
+            failed: 0
+            completed: 49
+        checkpointJson:
+          nullable: true
+    ConnectorKnowledgeBase:
+      type: object
+      required:
+        - id
+        - type
+        - sourceType
+        - data
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UUID of the knowledge base.
+          example: bca6c483-9205-4724-81e3-f4340b79efbc
+        type:
+          type: string
+          enum:
+            - KNOWLEDGE_BASE
+          description: Searches a synced knowledge base (Google Drive, Web crawl, etc.).
+        sourceType:
+          type: string
+          enum:
+            - BACKEND
+        data:
+          type: object
+          required:
+            - id
+            - companyId
+            - userId
+            - type
+            - name
+            - status
+          properties:
+            id:
+              type: string
+              format: uuid
+            companyId:
+              type: integer
+              example: 1
+            userId:
+              type: integer
+              example: 371
+            type:
+              type: string
+              enum:
+                - GOOGLE_DRIVE
+                - WEB
+              description: Source type of the knowledge base.
+            name:
+              type: string
+              example: Mahi Changes Verifications
+            status:
+              type: string
+              enum:
+                - ACTIVE
+                - INACTIVE
+            lastSyncAt:
+              type: string
+              format: date-time
+              nullable: true
+            lastSyncStatus:
+              type: string
+              enum:
+                - SUCCESS
+                - FAILED
+              nullable: true
+            sourceId:
+              nullable: true
+            credentialId:
+              type: integer
+              nullable: true
+              example: 7219087
+            activeConfig:
+              nullable: true
+            latestRun:
+              $ref: '#/components/schemas/KnowledgeBaseRun'
+              nullable: true
+    ConnectorAI:
+      type: object
+      required:
+        - id
+        - type
+        - sourceType
+      properties:
+        id:
+          type: string
+          description: Numeric connector instance ID (as string). Fetch from GET /connector/api/v1/instance.
+          example: '315'
+        type:
+          type: string
+          enum:
+            - CONNECTOR
+          description: Live data via AI-side connector instance.
+        sourceType:
+          type: string
+          enum:
+            - AI
+          description: Data is fetched live by the AI microservice at query time.
+    McpConfig:
+      type: object
+      required:
+        - name
+        - url
+        - transport
+        - serverType
+      properties:
+        id:
+          type: integer
+          description: Unique ID assigned when the MCP server is registered. Omit for WORKBOOK serverType.
+          example: 18
+        name:
+          type: string
+          description: Display name shown in agent builder and tool traces.
+          example: Workspace MCP
+        description:
+          type: string
+          description: Description of what tools this MCP server exposes.
+          example: ''
+        url:
+          type: string
+          description: Full URL of the MCP server endpoint. Empty string for WORKBOOK serverType — resolved automatically from data.
+          example: https://testing-mcp.datagol.ai/workspace/link-v2?workspace_id=...&token=...
+        transport:
+          type: string
+          enum:
+            - streamable_http
+          description: Protocol for communicating with the MCP server.
+        serverType:
+          type: string
+          enum:
+            - CUSTOM
+            - WORKBOOK
+          description: CUSTOM = externally hosted MCP server. WORKBOOK = DataGOL-managed server backed by a workspace workbook.
+        companyId:
+          type: integer
+          description: Tenant company ID this MCP server belongs to.
+          example: 1
+        data:
+          type: object
+          description: Required only for serverType WORKBOOK. Contains the workbook and workspace IDs.
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: Workbook UUID.
+            workspaceId:
+              type: string
+              format: uuid
+              description: Workspace UUID.
+      example:
+        CUSTOM:
+          id: 18
+          name: Workspace MCP
+          description: ''
+          url: https://testing-mcp.datagol.ai/workspace/link-v2?workspace_id=a336506d-540e-4a78-809b-daf501687bca&token=<token>
+          transport: streamable_http
+          serverType: CUSTOM
+          companyId: 1
+        WORKBOOK:
+          serverType: WORKBOOK
+          name: dg_Order.csv
+          description: ''
+          url: ''
+          transport: streamable_http
+          data:
+            id: ca45078d-ed26-4752-a7a7-4aed24af033c
+            workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+    VoiceConfig:
+      type: object
+      properties:
+        voiceEnabled:
+          type: boolean
+          description: Master switch. true = microphone and speaker controls appear in chat UI.
+          example: true
+        textToSpeech:
+          type: object
+          properties:
+            provider:
+              type: string
+              enum:
+                - google
+                - openai
+                - ''
+              description: TTS provider for reading agent responses aloud.
+              example: google
+            apiKey:
+              type: string
+              description: API key for the TTS provider. Stored encrypted.
+              example: <your-google-tts-key>
+        speechToText:
+          type: object
+          properties:
+            provider:
+              type: string
+              enum:
+                - openai
+                - google
+                - ''
+              description: STT provider for transcribing user voice input.
+              example: openai
+            apiKey:
+              type: string
+              description: API key for the STT provider.
+              example: <your-openai-whisper-key>
+    SubAgent:
+      type: object
+      required:
+        - name
+        - description
+        - prompt
+      properties:
+        name:
+          type: string
+          description: Name of the sub-agent. Used in orchestration logs and UI traces.
+          example: Financial Sub Agent
+        description:
+          type: string
+          description: One-line capability statement. The parent agent uses this to decide when to delegate to this sub-agent.
+          example: Financial Sub Agent To Derive the P&L of a company
+        prompt:
+          type: string
+          description: System prompt for the sub-agent. Scoped and focused — narrower than the parent.
+          example: You have access to financial data and your job is to focus on Profit and Loss (P&L).
+        uiMetadata:
+          type: object
+          properties:
+            capabilities:
+              type: object
+              properties:
+                models:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                    defaultValue:
+                      type: string
+                      example: claude-opus-4-6
+                    supportedModels:
+                      type: array
+                      items:
+                        type: string
+                      example:
+                        - claude-opus-4-6
+        configs:
+          type: object
+          description: Full configs object for the sub-agent — same structure as parent. Supports connectors, mcpConfigs, webSearchEnabled, browserEnabled.
+          properties:
+            connectors:
+              type: array
+              items: {}
+            mcpConfigs:
+              type: array
+              items:
+                $ref: '#/components/schemas/McpConfig'
+            webSearchEnabled:
+              type: boolean
+            browserEnabled:
+              type: boolean
+    Skill:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - s3Url
+        - enabled
+      properties:
+        id:
+          type: integer
+          description: Numeric skill ID from the skills catalog.
+          example: 10
+        name:
+          type: string
+          description: Machine-readable skill identifier.
+          example: chart-visualization
+        description:
+          type: string
+          description: Trigger condition — the model reads this to decide when to invoke the skill.
+          example: Read this skill when asked for a dashboard or a chart.
+        s3Url:
+          type: string
+          description: S3 path to the SKILL.md file. Retrieved automatically when a skill is selected in the UI.
+          example: InnCreTech/skills/10/3af838c6-01de-498d-8937-4f774b0983cd/SKILL.md
+        enabled:
+          type: boolean
+          description: Whether this skill is active. false = temporarily disabled without removing.
+          example: true
+    AgentConfigs:
+      type: object
+      required:
+        - connectors
+        - webSearchEnabled
+      properties:
+        mcpConfigs:
+          type: array
+          description: MCP server tool configurations.
+          items:
+            $ref: '#/components/schemas/McpConfig'
+        connectors:
+          type: array
+          description: Data sources the agent can retrieve information from. Mix and match types freely.
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/ConnectorWorkbookRag'
+              - $ref: '#/components/schemas/ConnectorWorkspaceDocuments'
+              - $ref: '#/components/schemas/ConnectorKnowledgeBase'
+              - $ref: '#/components/schemas/ConnectorAI'
+        webSearchEnabled:
+          type: boolean
+          description: Enables real-time web search. A web search tool is injected into the agent's tool set.
+          example: true
+        skillIds:
+          type: array
+          description: Numeric IDs of skills attached. Must match id values in the top-level skills array.
+          items:
+            type: integer
+          example:
+            - 10
+            - 11
+    UiMetadata:
+      type: object
+      properties:
+        capabilities:
+          type: object
+          required:
+            - models
+            - allowDownload
+            - conversationFiles
+          properties:
+            allowDownload:
+              type: boolean
+              description: true = download button appears in conversation toolbar.
+              example: true
+            models:
+              type: object
+              required:
+                - enabled
+                - supportedModels
+                - defaultValue
+              properties:
+                enabled:
+                  type: boolean
+                  description: true = model selector dropdown shown in chat header. false = model is locked.
+                  example: true
+                supportedModels:
+                  type: array
+                  items:
+                    type: string
+                  description: 'Model IDs available in the selector. Supported values: gpt-5.2, gpt-4.1, o4-mini, vertex_ai/claude-opus-4-7, claude-sonnet-4-6, claude-haiku-4-5-20251001, claude-opus-4-6'
+                  example:
+                    - gpt-5.2
+                    - claude-sonnet-4-6
+                    - o4-mini
+                defaultValue:
+                  type: string
+                  description: Model pre-selected when a conversation starts. Must be in supportedModels.
+                  example: gpt-5.2
+            conversationFiles:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  description: true = file upload button shown in chat input area (PDFs, CSVs, images).
+                  example: true
+        style:
+          type: object
+          properties:
+            logo:
+              type: object
+              properties:
+                bgColor:
+                  type: string
+                  description: Background color for the agent logo bubble. CSS color value or empty string for default.
+                  example: '#1a1a2e'
+                textColor:
+                  type: string
+                  description: Icon/text color on top of the logo background.
+                  example: '#ffffff'
+        input:
+          type: object
+          properties:
+            placeholder:
+              type: string
+              description: Placeholder text in the chat input box. Hints at what the agent specializes in.
+              example: What is EBITDA? And How Its Calculated
+        bestFor:
+          type: array
+          items:
+            type: string
+          description: Tags describing ideal use cases. Displayed as chips in the agent discovery UI.
+          example:
+            - Financial Analysis
+            - P&L Reports
+        conversationStarters:
+          type: array
+          items:
+            type: string
+          description: Suggested opening messages rendered as clickable buttons in the chat before the user types.
+          example:
+            - What is EBITDA?
+            - Show me Q1 revenue
+        logo:
+          nullable: true
+          description: Custom logo object. null = use default DataGOL icon.
+    CreateAgentRequest:
+      type: object
+      required:
+        - name
+        - description
+        - prompt
+        - isPublished
+        - configs
+        - uiMetadata
+      properties:
+        uiMetadata:
+          $ref: '#/components/schemas/UiMetadata'
+        configs:
+          $ref: '#/components/schemas/AgentConfigs'
+        isPublished:
+          type: boolean
+          description: false = draft, creator only. true = published, shared users can access.
+          example: false
+        prompt:
+          type: string
+          description: System prompt injected at the start of every conversation. The core instruction set — be specific about role, output format, and behavior.
+          example: Scan this document and extract all key metrics, numbers, and quantitative statements. Organize them into a structured table.
+        description:
+          type: string
+          description: Short description of what the agent does. Shown in the agent card.
+          example: This Agent Details you through the Complete financial related Data
+        name:
+          type: string
+          description: Display name of the agent. Shown in the agent list and chat header.
+          example: Financial Agent
+    AgentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        prompt:
+          type: string
+        instructions:
+          type: string
+        examples:
+          type: string
+        isPublished:
+          type: boolean
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
+        uiMetadata:
+          $ref: '#/components/schemas/UiMetadata'
+        configs:
+          $ref: '#/components/schemas/AgentConfigs'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    BulkPermissionRequest:
+      type: object
+      required:
+        - permissions
+      properties:
+        permissions:
+          type: array
+          items:
+            type: object
+            required:
+              - elementId
+              - elementType
+              - userId
+              - permission
+            properties:
+              elementId:
+                type: string
+                format: uuid
+                description: UUID of the Custom Agent to share.
+                example: 7bf5f4d6-743d-414f-aa4a-96f7a20ce0fd
+              elementType:
+                type: string
+                enum:
+                  - CUSTOM_AGENT
+                description: Must be CUSTOM_AGENT for agent sharing.
+              userId:
+                type: integer
+                description: ID of the user to grant access to. Fetch from GET /idp/api/v1/team.
+                example: 935
+              permission:
+                type: string
+                enum:
+                  - VIEWER
+                  - EDITOR
+                  - CREATOR
+                description: 'VIEWER: view only. EDITOR: view + edit. CREATOR: full access including delete and share.'
+    InitiateConversationRequest:
+      type: object
+      required:
+        - name
+        - active
+        - scope
+        - userId
+        - agentType
+        - uiMetadata
+      properties:
+        name:
+          type: string
+          description: Display name for this conversation.
+          example: Data Summary Request
+        active:
+          type: boolean
+          description: Always true when creating a new conversation.
+          example: true
+        scope:
+          type: string
+          enum:
+            - PRIVATE
+            - SHARED
+          description: PRIVATE = only the creating user can see it. SHARED = visible to all users with agent access.
+          example: PRIVATE
+        userId:
+          type: integer
+          description: ID of the authenticated user. Must match the token's userId claim.
+          example: 371
+        agentType:
+          type: string
+          enum:
+            - CustomAgent
+          description: Must be CustomAgent for custom agent conversations.
+        uiMetadata:
+          type: object
+          required:
+            - type
+            - parameters
+            - configuration
+          properties:
+            type:
+              type: string
+              enum:
+                - CustomAgent
+            parameters:
+              type: object
+              properties:
+                customAgentId:
+                  type: string
+                  format: uuid
+                  description: UUID of the Custom Agent backing this conversation.
+                  example: 1526da2b-3264-4118-b141-87857369b0bd
+                parameters:
+                  type: object
+                  properties:
+                    customAgentId:
+                      type: string
+                      format: uuid
+            configuration:
+              type: object
+              properties:
+                llmModel:
+                  type: string
+                  description: Active LLM model for this conversation. Must be in the agent's supportedModels.
+                  example: gpt-5.2
+    StreamingMessageRequest:
+      type: object
+      required:
+        - agentType
+        - type
+        - conversationId
+        - message
+        - parameters
+        - selectedLlmModel
+      properties:
+        agentType:
+          type: string
+          enum:
+            - CustomAgent
+          description: Must be CustomAgent.
+        type:
+          type: string
+          enum:
+            - CustomAgent
+          description: Duplicates agentType for internal routing.
+        conversationId:
+          type: string
+          format: uuid
+          description: The conversation ID returned by POST /ai/api/v2/conversations.
+          example: ae5ee879-e967-45e4-bca0-c6c78d10bd23
+        message:
+          type: string
+          description: The user's message text to send to the agent.
+          example: Summarise the data
+        parameters:
+          type: object
+          properties:
+            customAgentId:
+              type: string
+              format: uuid
+              description: UUID of the Custom Agent. Must match the agent backing this conversation.
+              example: 1526da2b-3264-4118-b141-87857369b0bd
+        uiMetadata:
+          type: object
+          description: 'Pass as { parameters: {} } unless overriding model-level parameters.'
+          properties:
+            parameters:
+              type: object
+        selectedLlmModel:
+          type: string
+          description: Model for this specific message. Can be changed per message to switch models mid-conversation.
+          example: gpt-5.2
+paths:
+  /customAgents/api/v1:
+    get:
+      summary: List all Custom Agents
+      description: Returns all Custom Agents accessible to the authenticated user within their company tenant.
+      operationId: listCustomAgents
+      tags:
+        - Custom Agents
+      responses:
+        '200':
+          description: Array of agent summaries.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AgentResponse'
+        '401':
+          description: Missing or expired JWT token.
+        '403':
+          description: User lacks VIEW_COPILOT permission.
+    post:
+      summary: Create a Custom Agent
+      description: Creates a fully configured Custom AI Agent with data sources, MCP tool servers, sub-agents, voice, skills, and UI behavior. Returns the created agent with its generated UUID.
+      operationId: createCustomAgent
+      tags:
+        - Custom Agents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAgentRequest'
+            example:
+              uiMetadata:
+                capabilities:
+                  models:
+                    enabled: true
+                    supportedModels:
+                      - gpt-5.2
+                      - vertex_ai/claude-opus-4-7
+                      - claude-sonnet-4-6
+                      - claude-haiku-4-5-20251001
+                      - o4-mini
+                    defaultValue: gpt-5.2
+                  allowDownload: true
+                  conversationFiles:
+                    enabled: true
+                style:
+                  logo:
+                    bgColor: ''
+                    textColor: ''
+                input:
+                  placeholder: What is EBITDA? And How Its Calculated
+                bestFor: []
+                conversationStarters: []
+                logo: null
+              configs:
+                mcpConfigs:
+                  - id: 18
+                    name: Workspace MCP
+                    description: ''
+                    url: https://testing-mcp.datagol.ai/workspace/link-v2?workspace_id=a336506d-540e-4a78-809b-daf501687bca&token=<token>
+                    transport: streamable_http
+                    serverType: CUSTOM
+                    companyId: 1
+                  - id: 35
+                    name: New MCP Server
+                    description: ''
+                    url: Financial Sub Agent
+                    transport: streamable_http
+                    serverType: CUSTOM
+                    companyId: 1
+                  - serverType: WORKBOOK
+                    name: dg_Order.csv
+                    description: ''
+                    url: ''
+                    transport: streamable_http
+                    data:
+                      id: ca45078d-ed26-4752-a7a7-4aed24af033c
+                      workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                  - serverType: WORKBOOK
+                    name: Install Metrics
+                    description: ''
+                    url: ''
+                    transport: streamable_http
+                    data:
+                      id: 3095f6c0-b399-4e0f-b367-7db38b0a8453
+                      workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                connectors:
+                  - id: ec345675-06bf-4133-b8c3-f8fc1934b839
+                    type: WORKBOOK_RAG
+                    sourceType: BACKEND
+                    data:
+                      title: dg_order_item.csv
+                      description: ''
+                      workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                      workspaceName: Link_v2
+                  - id: 753bd2d1-3426-41f2-b78d-a24a5a4cb0dd
+                    type: WORKBOOK_RAG
+                    sourceType: BACKEND
+                    data:
+                      title: dg_customer.csv
+                      description: ''
+                      workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                      workspaceName: Link_v2
+                  - id: ca45078d-ed26-4752-a7a7-4aed24af033c
+                    type: WORKBOOK_RAG
+                    sourceType: BACKEND
+                    data:
+                      title: dg_Order.csv
+                      description: ''
+                      workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                      workspaceName: Link_v2
+                  - id: aff24e82-564b-468a-9727-392a08f017bc
+                    type: WORKBOOK_RAG
+                    sourceType: BACKEND
+                    data:
+                      title: dg_products.csv
+                      description: ''
+                      workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                      workspaceName: Link_v2
+                  - id: 3095f6c0-b399-4e0f-b367-7db38b0a8453
+                    type: WORKBOOK_RAG
+                    sourceType: BACKEND
+                    data:
+                      title: Install Metrics
+                      description: ''
+                      workspaceId: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                      workspaceName: Link_v2
+                  - id: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+                    type: WORKSPACE_DOCUMENTS
+                    sourceType: BACKEND
+                    data:
+                      name: Link_v2
+                  - id: bca6c483-9205-4724-81e3-f4340b79efbc
+                    type: KNOWLEDGE_BASE
+                    sourceType: BACKEND
+                    data:
+                      id: bca6c483-9205-4724-81e3-f4340b79efbc
+                      companyId: 1
+                      userId: 371
+                      type: GOOGLE_DRIVE
+                      name: Mahi Changes Verifications
+                      status: ACTIVE
+                      lastSyncAt: 2026-05-01T18:56:45.544+0000
+                      lastSyncStatus: SUCCESS
+                      sourceId: null
+                      credentialId: 7219087
+                      activeConfig: null
+                      latestRun:
+                        id: 036f1723-1b57-4e06-9295-17bb24fdbd58
+                        connectorId: bca6c483-9205-4724-81e3-f4340b79efbc
+                        runType: INCREMENTAL
+                        status: SUCCESS
+                        temporalWorkflowId: kb-sync-036f1723-1b57-4e06-9295-17bb24fdbd58
+                        startedAt: 2026-05-01T18:56:44.855+0000
+                        finishedAt: 2026-05-01T18:56:45.543+0000
+                        errorMessage: null
+                        statsJson: {}
+                        checkpointJson: null
+                  - id: 5ef264c5-4194-4c62-a2bc-fddc2a431530
+                    type: KNOWLEDGE_BASE
+                    sourceType: BACKEND
+                    data:
+                      id: 5ef264c5-4194-4c62-a2bc-fddc2a431530
+                      companyId: 1
+                      userId: 588
+                      type: WEB
+                      name: DataGolTest
+                      status: ACTIVE
+                      lastSyncAt: 2026-05-07T10:00:00.116+0000
+                      lastSyncStatus: SUCCESS
+                      sourceId: null
+                      credentialId: null
+                      activeConfig: null
+                      latestRun:
+                        id: 1529e2e9-89fd-4991-947f-8dcf8a55e8cb
+                        connectorId: 5ef264c5-4194-4c62-a2bc-fddc2a431530
+                        runType: INCREMENTAL
+                        status: SUCCESS
+                        temporalWorkflowId: kb-sync-1529e2e9-89fd-4991-947f-8dcf8a55e8cb
+                        startedAt: 2026-05-07T09:58:14.174+0000
+                        finishedAt: 2026-05-07T10:00:00.116+0000
+                        errorMessage: null
+                        statsJson:
+                          total: 49
+                          failed: 0
+                          completed: 49
+                        checkpointJson: null
+                  - id: '315'
+                    type: CONNECTOR
+                    sourceType: AI
+                webSearchEnabled: true
+                skillIds:
+                  - 10
+                  - 11
+              isPublished: false
+              prompt: Scan this document and extract all key metrics, numbers, and quantitative statements (such as revenue, costs, growth rates, counts, targets, and timelines). Organize them into a structured table with columns for metric name, value, unit, date or period, and a short description of what the metric represents. If there are assumptions or caveats around specific numbers, briefly note those as well.
+              description: This Agent Details you through the Complete financial related Data
+              name: Financial Agent
+      responses:
+        '200':
+          description: Agent created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+        '400':
+          description: Malformed JSON or missing required fields.
+        '401':
+          description: Missing or expired JWT token.
+        '403':
+          description: User lacks CREATE_COPILOT permission.
+  /customAgents/api/v1/{agentId}:
+    get:
+      summary: Get Custom Agent by ID
+      description: Returns the full configuration of a specific Custom Agent.
+      operationId: getCustomAgentById
+      tags:
+        - Custom Agents
+      parameters:
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the Custom Agent.
+          example: f1c6ff59-f4b7-476e-b306-f8531b42863d
+      responses:
+        '200':
+          description: Full agent configuration.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentResponse'
+        '404':
+          description: Agent not found in this tenant.
+  /noCo/api/v2/elementPermissions/{elementType}/{agentId}:
+    get:
+      summary: Get Custom Agent permissions
+      description: Returns all users who have access to the specified agent and their permission levels.
+      operationId: getAgentPermissions
+      tags:
+        - Permissions
+      parameters:
+        - name: elementType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - CUSTOM_AGENT
+          description: Always CUSTOM_AGENT.
+          example: CUSTOM_AGENT
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the Custom Agent.
+          example: 7bf5f4d6-743d-414f-aa4a-96f7a20ce0fd
+      responses:
+        '200':
+          description: Array of permission grants for this agent.
+        '403':
+          description: User lacks VIEW_COPILOT permission.
+  /noCo/api/v2/elementPermissions/bulk:
+    post:
+      summary: Share agent with team members
+      description: Grants one or more users access to a Custom Agent in a single atomic operation. Supports VIEWER, EDITOR, and CREATOR permission levels.
+      operationId: bulkShareAgent
+      tags:
+        - Permissions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkPermissionRequest'
+            example:
+              permissions:
+                - elementId: 7bf5f4d6-743d-414f-aa4a-96f7a20ce0fd
+                  elementType: CUSTOM_AGENT
+                  userId: 935
+                  permission: CREATOR
+      responses:
+        '200':
+          description: Permissions applied successfully.
+        '403':
+          description: User lacks ASSIGN_ROLES permission.
+  /noCo/api/v2/workspaces:
+    get:
+      summary: List all workspaces
+      description: Returns all workspaces in the company tenant. Use workspace id values as workspaceId in WORKBOOK_RAG and WORKSPACE_DOCUMENTS connector objects.
+      operationId: listWorkspaces
+      tags:
+        - Reference Data
+      responses:
+        '200':
+          description: Array of workspace objects.
+  /noCo/api/v2/workspaces/{workspaceId}:
+    get:
+      summary: Get workspace by ID (side panel context)
+      description: Fetches workspace details scoped to a Custom Agent. Called when a user opens the agent from the side panel to load context-specific workspace data.
+      operationId: getWorkspaceById
+      tags:
+        - Reference Data
+      parameters:
+        - name: workspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: 055b4db3-96e1-45e1-8ff5-3a911b779a53
+        - name: resourceType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - CUSTOM_AGENT
+          description: Always CUSTOM_AGENT.
+          example: CUSTOM_AGENT
+        - name: resourceId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the Custom Agent.
+          example: ac861ca7-d3c6-47ac-be63-abc49344b254
+      responses:
+        '200':
+          description: Workspace details scoped to the agent.
+  /connector/api/v1/instance:
+    get:
+      summary: List all AI connectors
+      description: Returns all AI connector instances available to the tenant. Use the id values (as strings) in configs.connectors for CONNECTOR type entries.
+      operationId: listConnectors
+      tags:
+        - Reference Data
+      responses:
+        '200':
+          description: Array of connector instance objects.
+  /idp/api/v1/team:
+    get:
+      summary: List team members
+      description: Returns all users in the company. Use userId values when sharing an agent via the bulk permissions endpoint.
+      operationId: listTeamMembers
+      tags:
+        - Reference Data
+      responses:
+        '200':
+          description: Array of user objects.
+  /ai/api/v2/conversations:
+    get:
+      summary: List all conversations
+      description: Returns the list of all conversations for the authenticated user.
+      operationId: listConversations
+      tags:
+        - Conversations
+      responses:
+        '200':
+          description: Array of conversation objects.
+    post:
+      summary: Initiate a conversation
+      description: Opens a new conversation session backed by a Custom Agent. Returns the conversationId required for the streaming endpoint.
+      operationId: initiateConversation
+      tags:
+        - Conversations
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateConversationRequest'
+            example:
+              name: Data Summary Request
+              active: true
+              scope: PRIVATE
+              userId: 371
+              agentType: CustomAgent
+              uiMetadata:
+                type: CustomAgent
+                parameters:
+                  customAgentId: 1526da2b-3264-4118-b141-87857369b0bd
+                  parameters:
+                    customAgentId: 1526da2b-3264-4118-b141-87857369b0bd
+                configuration:
+                  llmModel: gpt-5.2
+      responses:
+        '200':
+          description: Conversation created. Contains conversationId for the streaming endpoint.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: conversationId — pass to the streaming endpoint.
+                  name:
+                    type: string
+                  scope:
+                    type: string
+                  agentType:
+                    type: string
+                  active:
+                    type: boolean
+  /ai/api/v2/messages/streaming:
+    post:
+      summary: Stream a message to the agent
+      description: 'Sends a user message and streams the AI response as Server-Sent Events (SSE). This endpoint is on the AI Core service (testing-core-ai.datagol.ai). Requires the `credentials: include` header.'
+      operationId: streamMessage
+      tags:
+        - Messaging
+      servers:
+        - url: https://testing-core-ai.datagol.ai
+          description: AI Core service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamingMessageRequest'
+            example:
+              agentType: CustomAgent
+              type: CustomAgent
+              conversationId: ae5ee879-e967-45e4-bca0-c6c78d10bd23
+              message: Summarise the data
+              parameters:
+                customAgentId: 1526da2b-3264-4118-b141-87857369b0bd
+              uiMetadata:
+                parameters: {}
+              selectedLlmModel: gpt-5.2
+      responses:
+        '200':
+          description: SSE stream of delta tokens and tool call events. Parse events with `data:` prefix.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+  /ai/api/v1/builder/chat/complete:
+    post:
+      summary: Generate conversation name
+      description: 'Step 3 in the conversation lifecycle. Generates a concise ≤5-word conversation name from the user''s first message using `gpt-4o-mini` and a structured tool call. Called client-side the moment the user submits their first message — before the conversation record is created — so the UI can display a meaningful title immediately. The `generate_conversation_name` tool is forced via `tool_choice: auto`.'
+      operationId: generateConversationName
+      tags:
+        - Messaging
+      servers:
+        - url: https://testing-core-ai.datagol.ai
+          description: AI Core service
+      parameters:
+        - name: resourceType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - CUSTOM_AGENT
+          example: CUSTOM_AGENT
+        - name: resourceId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the Custom Agent.
+          example: 1526da2b-3264-4118-b141-87857369b0bd
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model:
+                  type: string
+                  example: gpt-4o-mini
+                messages:
+                  type: array
+                  items:
+                    type: object
+                tools:
+                  type: array
+                  items:
+                    type: object
+                tool_choice:
+                  type: string
+                  example: auto
+      responses:
+        '200':
+          description: Tool call response containing the generated conversation_name.
+tags:
+  - name: Custom Agents
+    description: Create, read, and manage Custom AI Agents.
+  - name: Permissions
+    description: View and manage who has access to an agent.
+  - name: Conversations
+    description: Open and list conversation sessions backed by an agent.
+  - name: Messaging
+    description: Send messages and stream AI responses.
+  - name: Reference Data
+    description: Lookup APIs for workspaces, connectors, and team members used when building agent configs.

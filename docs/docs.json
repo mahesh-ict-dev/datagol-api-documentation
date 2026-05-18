@@ -29,12 +29,17 @@
       {
         "tab": "Documentation",
         "icon": "book-open",
-        "pages": ["introduction", "api-reference", "links-joins","ai-extraction-knowledge-graph", "workbook-mcp"]
+        "pages": ["introduction", "api-reference", "links-joins","ai-extraction-knowledge-graph", "workbook-mcp", "custom-agents"]
       },
       {
         "tab": "API Reference",
         "icon": "square-terminal",
         "openapi": "./openapi/openapi.yaml"
+      },
+      {
+        "tab": "Agents API",
+        "icon": "robot",
+        "openapi": "./openapi/agents-openapi.yaml"
       }
     ]
   }

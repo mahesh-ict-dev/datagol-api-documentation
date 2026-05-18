@@ -1,0 +1,1202 @@
+---
+title: "DataGOL Custom Agents API"
+description: "Complete reference for creating, configuring, and interacting with Custom AI Agents on the DataGOL platform — including connectors, MCP servers, sub-agents, voice, and streaming."
+---
+
+import { Note, Warning, Tip, Info, Card, CardGroup, Tabs, Tab, ParamField, ResponseField, Expandable, CodeGroup } from 'mintlify/components'
+
+## Overview
+
+DataGOL Custom Agents are fully configurable AI assistants that combine your company's data sources (workspaces, knowledge bases, connectors), external tools (MCP servers), sub-agents, and voice capabilities into a single deployable chat experience.
+
+The lifecycle of a Custom Agent is organized into the following groups:
+
+### Create Agent
+
+<Steps>
+  <Step title="Create Agent">
+    `POST /customAgents/api/v1` — define the agent's identity, data connectors, MCP tools, and UI behavior. Returns the `agentId` used in every subsequent call.
+  </Step>
+</Steps>
+
+### Initiate
+
+<Steps>
+  <Step title="Initiate a Conversation">
+    `POST /ai/api/v2/conversations` — create the conversation record, embedding the agent ID, selected model, and scope (`PRIVATE` / `SHARED`). Returns the `conversationId` required for streaming.
+  </Step>
+</Steps>
+
+### Converse
+
+<Steps>
+  <Step title="Stream Messages">
+    `POST /ai/api/v2/messages/streaming` — send the user message and receive the agent's SSE-streamed response. Pass `selectedLlmModel` to switch models per message.
+  </Step>
+</Steps>
+
+### Sharing and Permissions
+
+<Steps>
+  <Step title="Fetch Agent Permissions">
+    `GET /noCo/api/v2/elementPermissions/CUSTOM_AGENT/{agentId}` — verify who currently has access to the agent.
+  </Step>
+  <Step title="List Team Members">
+    `GET /idp/api/v1/team` — fetch the full team roster to populate the share dialog with user IDs and display names.
+  </Step>
+  <Step title="Share Team Members">
+    `POST /noCo/api/v2/elementPermissions/bulk` — grant `CREATOR`, `EDITOR`, or `VIEWER` access to selected team members by `userId`.
+  </Step>
+</Steps>
+
+### Misc
+
+<Steps>
+  <Step title="Generate Conversation Name">
+    `POST /ai/api/v1/builder/chat/complete?resourceType=CUSTOM_AGENT&resourceId={agentId}` — called client-side when the user types their first message. Uses `gpt-4o-mini` + a tool call to produce a concise 5-word conversation title before the conversation record is created.
+  </Step>
+</Steps>
+
+---
+
+## Authentication
+
+Every request to the DataGOL backend requires a signed JWT passed as a Bearer token.
+
+<Info>
+  Tokens are issued by the DataGOL Identity Provider (`/idp`) after login. They embed the user's `companyId`, `userId`, roles, and permissions. Tokens are short-lived — refresh them before they expire.
+</Info>
+
+### Required headers for every request
+
+| Header | Value | Required |
+|--------|-------|----------|
+| `Authorization` | `Bearer <jwt_token>` | **Yes** |
+| `Content-Type` | `application/json` | **Yes** |
+| `Accept` | `*/*` | Yes |
+
+### Optional / contextual headers
+
+| Header | Value | When to send |
+|--------|-------|--------------|
+| `Referer` | `https://your-app.datagol.ai/` | Recommended — used for CORS validation |
+| `Origin` | `https://your-app.datagol.ai` | Required for cross-origin browser requests |
+| `credentials` | `include` | Required only for the Streaming API |
+
+<Warning>
+  Never include raw browser-only headers (`sec-ch-ua`, `sec-fetch-*`) in server-to-server calls. They are browser hints and will be ignored or may cause unexpected behavior.
+</Warning>
+
+---
+
+## Base URLs
+
+| Service | Base URL | Purpose |
+|---------|----------|---------|
+| Backend API | `https://testing-be.datagol.ai` | Agent CRUD, conversations, permissions |
+| AI Core | `https://testing-core-ai.datagol.ai` | Chat completion, streaming |
+
+---
+
+## Reference APIs
+
+### Supporting Lookups
+
+Before creating an agent you will typically fetch the IDs you need:
+
+---
+
+#### GET List All Custom Agents
+
+<CodeGroup>
+```bash cURL
+curl 'https://testing-be.datagol.ai/customAgents/api/v1' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json'
+```
+</CodeGroup>
+
+**`GET /customAgents/api/v1`**
+
+Returns all Custom Agents accessible to the authenticated user within their company tenant.
+
+**Response** — array of agent summaries including `id`, `name`, `description`, `isPublished`, and `configs`.
+
+---
+
+#### GET Get Custom Agent by ID
+
+**`GET /customAgents/api/v1/{agentId}`**
+
+<ParamField path="agentId" type="string (UUID)" required>
+  The UUID of the Custom Agent returned from the create or list endpoint.
+</ParamField>
+
+<CodeGroup>
+```bash cURL
+curl 'https://testing-be.datagol.ai/customAgents/api/v1/f1c6ff59-f4b7-476e-b306-f8531b42863d' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json'
+```
+</CodeGroup>
+
+---
+
+#### GET List All Workspaces
+
+**`GET /noCo/api/v2/workspaces`**
+
+Returns all workspaces in the company tenant. Use `id` values as `workspaceId` in connector objects.
+
+<CodeGroup>
+```bash cURL
+curl 'https://testing-be.datagol.ai/noCo/api/v2/workspaces' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json'
+```
+</CodeGroup>
+
+---
+
+#### GET List All Connectors
+
+**`GET /connector/api/v1/instance`**
+
+Returns all AI connectors (type `CONNECTOR` / `sourceType: AI`) available to the tenant. Use connector `id` values in the `configs.connectors` array.
+
+<CodeGroup>
+```bash cURL
+curl 'https://testing-be.datagol.ai/connector/api/v1/instance' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json'
+```
+</CodeGroup>
+
+---
+
+#### GET List Team Members
+
+**`GET /idp/api/v1/team`**
+
+Returns all users in the company. Use `userId` values when sharing an agent.
+
+<CodeGroup>
+```bash cURL
+curl 'https://testing-be.datagol.ai/idp/api/v1/team' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json'
+```
+</CodeGroup>
+
+---
+
+#### GET List All Conversations
+
+**`GET /ai/api/v2/conversations`**
+
+Returns the list of all conversations for the authenticated user.
+
+---
+
+---
+
+## POST Create Custom Agent
+
+**`POST /customAgents/api/v1`**
+
+Creates a fully configured Custom AI Agent. This is the most complex endpoint — every field is documented below.
+
+<CodeGroup>
+```bash cURL
+curl --location 'https://testing-be.datagol.ai/customAgents/api/v1' \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '<see full body below>'
+```
+</CodeGroup>
+
+---
+
+### `uiMetadata` — UI Presentation Layer
+
+Controls how the agent looks and behaves in the DataGOL chat interface.
+
+<ParamField body="uiMetadata" type="object" required>
+  <Expandable title="uiMetadata fields">
+
+<ParamField body="uiMetadata.capabilities" type="object" required>
+      Defines which UI capabilities are enabled for this agent.
+
+      <Expandable title="capabilities fields">
+
+        <ParamField body="uiMetadata.capabilities.allowDownload" type="boolean" required>
+          Whether users can download the chat conversation as a file.
+
+          - `true` — A download button appears in the conversation toolbar.
+          - `false` — Download is disabled.
+        </ParamField>
+
+        <ParamField body="uiMetadata.capabilities.models" type="object" required>
+          Model selector configuration shown in the chat UI.
+
+          <Expandable title="models fields">
+
+            <ParamField body="uiMetadata.capabilities.models.enabled" type="boolean" required>
+              Whether users can switch models mid-conversation.
+
+              - `true` — A model selector dropdown is shown in the chat header.
+              - `false` — The default model is locked; no switcher is displayed.
+            </ParamField>
+
+            <ParamField body="uiMetadata.capabilities.models.supportedModels" type="array of strings" required>
+              List of model IDs available in the selector. Users can only pick from this list.
+
+              **Supported values (as of May 2026):**
+
+              | Model ID | Provider |
+              |----------|----------|
+              | `gpt-5.2` | OpenAI |
+              | `gpt-4.1` | OpenAI |
+              | `o4-mini` | OpenAI |
+              | `vertex_ai/claude-opus-4-7` | Anthropic via Vertex AI |
+              | `claude-sonnet-4-6` | Anthropic |
+              | `claude-haiku-4-5-20251001` | Anthropic |
+              | `claude-opus-4-6` | Anthropic |
+            </ParamField>
+
+            <ParamField body="uiMetadata.capabilities.models.defaultValue" type="string" required>
+              The model pre-selected when a conversation starts. Must be in `supportedModels`.
+
+              **Example:** `"gpt-5.2"`
+            </ParamField>
+
+          </Expandable>
+        </ParamField>
+
+        <ParamField body="uiMetadata.capabilities.conversationFiles.enabled" type="boolean" required>
+          Whether users can upload files (PDFs, CSVs, images) into the conversation for the agent to analyze.
+
+          - `true` — File upload button is shown in the chat input area.
+          - `false` — File upload is hidden.
+        </ParamField>
+</Expandable>
+    </ParamField>
+
+<ParamField body="uiMetadata.style.logo.bgColor" type="string">
+      Background color for the agent logo bubble. Accepts any valid CSS color value (hex, rgb, named).
+
+      **Example:** `"#1a1a2e"` | `""` (empty = use default)
+    </ParamField>
+
+<ParamField body="uiMetadata.style.logo.textColor" type="string">
+      Text/icon color rendered on top of the logo background.
+
+      **Example:** `"#ffffff"` | `""` (empty = use default)
+    </ParamField>
+
+<ParamField body="uiMetadata.input.placeholder" type="string">
+      Placeholder text in the chat input box. Use this to hint at what the agent specializes in.
+
+      **Example:** `"What is EBITDA? And How Its Calculated"`
+
+      **Default:** `""` (empty = generic placeholder)
+    </ParamField>
+
+<ParamField body="uiMetadata.bestFor" type="array of strings">
+      Tags that describe ideal use cases for this agent. Displayed as chips in the agent discovery UI.
+
+      **Example:** `["Financial Analysis", "P&L Reports", "KPI Extraction"]`
+
+      **Default:** `[]`
+    </ParamField>
+
+<ParamField body="uiMetadata.conversationStarters" type="array of strings">
+      Suggested opening messages shown to users before they start typing. Each item renders as a clickable button in the chat.
+
+      **Example:** `["What is EBITDA?", "Summarize Q1 revenue", "Show me the cost breakdown"]`
+
+      **Default:** `[]`
+    </ParamField>
+
+<ParamField body="uiMetadata.logo" type="object | null">
+      Custom logo for the agent card. Set to `null` to use the default DataGOL icon.
+
+      **Default:** `null`
+    </ParamField>
+
+
+  </Expandable>
+</ParamField>
+
+---
+
+### `configs` — Agent Runtime Configuration
+
+The `configs` object is the brain of the agent — it defines every data source, tool, and capability the agent can access at runtime.
+
+<ParamField body="configs" type="object" required>
+  <Expandable title="configs fields">
+
+    ---
+
+    #### `configs.connectors` — Data Sources
+
+    <ParamField body="configs.connectors" type="array" required>
+      Array of data connectors the agent can retrieve information from. Supports three distinct connector types.
+
+      <Expandable title="Connector object fields (all types)">
+
+        <ParamField body="configs.connectors[].id" type="string" required>
+          UUID of the data source. For `WORKBOOK_RAG` and `WORKSPACE_DOCUMENTS`, this is the workbook/workspace UUID. For `KNOWLEDGE_BASE`, this is the knowledge base UUID. For `CONNECTOR`, this is the numeric connector instance ID (as a string).
+        </ParamField>
+
+        <ParamField body="configs.connectors[].type" type="string" required>
+          Determines how the agent retrieves data from this source.
+
+          | Value | Behavior |
+          |-------|----------|
+          | `WORKBOOK_RAG` | RAG (Retrieval Augmented Generation) over a single workbook file (CSV, Excel, etc.) in a workspace |
+          | `WORKSPACE_DOCUMENTS` | RAG over all documents in an entire workspace |
+          | `KNOWLEDGE_BASE` | Searches a synced knowledge base (Google Drive, Web, etc.) |
+          | `CONNECTOR` | Routes to an AI-side connector instance for real-time data access |
+        </ParamField>
+
+        <ParamField body="configs.connectors[].sourceType" type="string" required>
+          Where the connector data comes from.
+
+          | Value | Meaning |
+          |-------|---------|
+          | `BACKEND` | Data indexed and served by the DataGOL backend |
+          | `AI` | Data fetched live by the AI microservice at query time |
+        </ParamField>
+
+        <ParamField body="configs.connectors[].data" type="object">
+          Type-specific metadata. See breakdown below by connector type.
+        </ParamField>
+
+      </Expandable>
+
+      ---
+
+      **Type: `WORKBOOK_RAG`** — Single file RAG
+
+      Attaches a specific workbook file for the agent to search over using vector retrieval.
+
+      ```json
+      {
+        "id": "ec345675-06bf-4133-b8c3-f8fc1934b839",
+        "type": "WORKBOOK_RAG",
+        "sourceType": "BACKEND",
+        "data": {
+          "title": "dg_order_item.csv",
+          "description": "Order line items with quantities and prices",
+          "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+          "workspaceName": "Link_v2"
+        }
+      }
+      ```
+
+      <Expandable title="WORKBOOK_RAG data fields">
+        <ParamField body="data.title" type="string" required>
+          Display name of the workbook file (typically the filename).
+        </ParamField>
+        <ParamField body="data.description" type="string">
+          Optional description of the file content to help the agent understand what data it contains.
+        </ParamField>
+        <ParamField body="data.workspaceId" type="string (UUID)" required>
+          UUID of the workspace containing this workbook. Fetch from `GET /noCo/api/v2/workspaces`.
+        </ParamField>
+        <ParamField body="data.workspaceName" type="string" required>
+          Display name of the workspace. Used in UI labels.
+        </ParamField>
+      </Expandable>
+
+      ---
+
+      **Type: `WORKSPACE_DOCUMENTS`** — Full workspace RAG
+
+      Attaches an entire workspace — every document in it becomes searchable by the agent.
+
+      ```json
+      {
+        "id": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+        "type": "WORKSPACE_DOCUMENTS",
+        "sourceType": "BACKEND",
+        "data": {
+          "name": "Link_v2"
+        }
+      }
+      ```
+
+      <Expandable title="WORKSPACE_DOCUMENTS data fields">
+        <ParamField body="data.name" type="string" required>
+          Display name of the workspace.
+        </ParamField>
+      </Expandable>
+
+      ---
+
+      **Type: `KNOWLEDGE_BASE`** — Synced external knowledge
+
+      Connects the agent to a synced knowledge base (Google Drive folder, web scrape, etc.). The `data` object is the full knowledge base entity returned by the knowledge base API.
+
+      ```json
+      {
+        "id": "bca6c483-9205-4724-81e3-f4340b79efbc",
+        "type": "KNOWLEDGE_BASE",
+        "sourceType": "BACKEND",
+        "data": {
+          "id": "bca6c483-9205-4724-81e3-f4340b79efbc",
+          "companyId": 1,
+          "userId": 371,
+          "type": "GOOGLE_DRIVE",
+          "name": "Mahi Changes Verifications",
+          "status": "ACTIVE",
+          "lastSyncAt": "2026-05-01T18:56:45.544+0000",
+          "lastSyncStatus": "SUCCESS",
+          "sourceId": null,
+          "credentialId": 7219087,
+          "activeConfig": null,
+          "latestRun": {
+            "id": "036f1723-1b57-4e06-9295-17bb24fdbd58",
+            "connectorId": "bca6c483-9205-4724-81e3-f4340b79efbc",
+            "runType": "INCREMENTAL",
+            "status": "SUCCESS",
+            "temporalWorkflowId": "kb-sync-036f1723-1b57-4e06-9295-17bb24fdbd58",
+            "startedAt": "2026-05-01T18:56:44.855+0000",
+            "finishedAt": "2026-05-01T18:56:45.543+0000",
+            "errorMessage": null,
+            "statsJson": {},
+            "checkpointJson": null
+          }
+        }
+      }
+      ```
+
+      <Expandable title="KNOWLEDGE_BASE data fields">
+        <ParamField body="data.id" type="string (UUID)" required>Same as the connector `id`.</ParamField>
+        <ParamField body="data.companyId" type="integer" required>Tenant company ID.</ParamField>
+        <ParamField body="data.userId" type="integer" required>ID of the user who created the knowledge base.</ParamField>
+        <ParamField body="data.type" type="string" required>
+          Knowledge base source type.
+
+          | Value | Source |
+          |-------|--------|
+          | `GOOGLE_DRIVE` | Google Drive folder |
+          | `WEB` | Web scrape / website crawl |
+        </ParamField>
+        <ParamField body="data.name" type="string" required>Display name of the knowledge base.</ParamField>
+        <ParamField body="data.status" type="string" required>`ACTIVE` or `INACTIVE`.</ParamField>
+        <ParamField body="data.lastSyncAt" type="string (ISO 8601)">Timestamp of the last successful sync.</ParamField>
+        <ParamField body="data.lastSyncStatus" type="string">`SUCCESS` or `FAILED`.</ParamField>
+        <ParamField body="data.credentialId" type="integer | null">ID of the OAuth credential used to access the source. `null` for open sources like web.</ParamField>
+        <ParamField body="data.latestRun" type="object">Details of the most recent sync run.</ParamField>
+        <ParamField body="data.latestRun.runType" type="string">`INCREMENTAL` or `FULL`.</ParamField>
+        <ParamField body="data.latestRun.status" type="string">`SUCCESS`, `FAILED`, or `RUNNING`.</ParamField>
+        <ParamField body="data.latestRun.statsJson" type="object">Sync statistics — e.g. `{ "total": 49, "failed": 0, "completed": 49 }`.</ParamField>
+      </Expandable>
+
+      ---
+
+      **Type: `CONNECTOR`** — AI-side live connector
+
+      Routes queries to a live connector instance managed by the AI microservice (e.g. a database connector, API connector).
+
+      ```json
+      {
+        "id": "315",
+        "type": "CONNECTOR",
+        "sourceType": "AI"
+      }
+      ```
+
+      <ParamField body="id" type="string" required>
+        Numeric connector instance ID (as a string). Obtain from `GET /connector/api/v1/instance`.
+      </ParamField>
+
+    </ParamField>
+
+    ---
+
+    #### `configs.mcpConfigs` — MCP Tool Servers
+
+    <ParamField body="configs.mcpConfigs" type="array">
+      Array of MCP (Model Context Protocol) server configurations. MCP servers expose tools (functions) the agent can invoke during reasoning — e.g. querying a live database, calling a Slack webhook, or reading from a workspace.
+
+      ```json
+      [
+        {
+          "id": 18,
+          "name": "Workspace MCP",
+          "description": "Access Link_v2 workspace data in real time",
+          "url": "https://testing-mcp.datagol.ai/workspace/...",
+          "transport": "streamable_http",
+          "serverType": "CUSTOM",
+          "companyId": 1
+        }
+      ]
+      ```
+
+      <Expandable title="MCP config fields">
+
+        <ParamField body="mcpConfigs[].id" type="integer">
+          Unique ID of the MCP server record. Assigned by the platform when the server is registered.
+        </ParamField>
+
+        <ParamField body="mcpConfigs[].name" type="string" required>
+          Display name shown in the agent builder UI and tool call traces.
+        </ParamField>
+
+        <ParamField body="mcpConfigs[].description" type="string">
+          Description of what tools this MCP server exposes.
+        </ParamField>
+
+        <ParamField body="mcpConfigs[].url" type="string" required>
+          Full URL of the MCP server endpoint. For `WORKBOOK` serverType this can be empty — the platform resolves it from `data`.
+
+          **Example:** `"https://testing-mcp.datagol.ai/workspace/link-v2?workspace_id=...&token=..."`
+        </ParamField>
+
+        <ParamField body="mcpConfigs[].transport" type="string" required>
+          Protocol used to communicate with the MCP server.
+
+          | Value | Protocol |
+          |-------|----------|
+          | `streamable_http` | HTTP with streaming support (recommended) |
+        </ParamField>
+
+        <ParamField body="mcpConfigs[].serverType" type="string" required>
+          Where the MCP server is hosted.
+
+          | Value | Meaning |
+          |-------|---------|
+          | `CUSTOM` | An externally hosted MCP server (n8n, custom API, etc.) |
+          | `WORKBOOK` | A DataGOL-managed MCP server backed by a workspace workbook |
+        </ParamField>
+
+        <ParamField body="mcpConfigs[].companyId" type="integer">
+          Tenant scoping — the company ID this MCP server belongs to.
+        </ParamField>
+
+        <ParamField body="mcpConfigs[].data" type="object">
+          Required only for `serverType: WORKBOOK`. Contains the workbook and workspace IDs used to resolve the server URL automatically.
+
+          ```json
+          {
+            "id": "ca45078d-ed26-4752-a7a7-4aed24af033c",
+            "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53"
+          }
+          ```
+        </ParamField>
+
+      </Expandable>
+    </ParamField>
+
+    ---
+
+    #### `configs.webSearchEnabled`
+
+    <ParamField body="configs.webSearchEnabled" type="boolean" required>
+      Enables real-time web search. When `true`, the agent can search the internet to supplement its responses with up-to-date information.
+
+      - `true` — A web search tool is injected into the agent's tool set.
+      - `false` — Agent is restricted to its configured data sources only.
+    </ParamField>
+
+    ---
+
+    #### `configs.skillIds`
+
+    <ParamField body="configs.skillIds" type="array of integers">
+      Numeric IDs of skills attached to this agent. The AI engine uses these IDs to load the corresponding skill content at runtime.
+
+      **Example:** `[10, 11]`
+    </ParamField>
+
+  </Expandable>
+</ParamField>
+
+---
+
+### Top-Level Fields
+
+<ParamField body="isPublished" type="boolean" required>
+  Controls whether the agent is visible and usable by team members beyond the creator.
+
+  - `false` — Draft mode. Only the creator can access it.
+  - `true` — Published. Users with shared permissions can open and chat with the agent.
+</ParamField>
+
+<ParamField body="prompt" type="string" required>
+  The system prompt injected at the start of every conversation with this agent. This is the core instruction set — be specific about role, output format, and behavior.
+
+  **Example:**
+  ```
+  Scan this document and extract all key metrics, numbers, and quantitative statements
+  (such as revenue, costs, growth rates, counts, targets, and timelines). Organize them
+  into a structured table with columns for metric name, value, unit, date or period, and
+  a short description of what the metric represents.
+  ```
+</ParamField>
+
+<ParamField body="description" type="string" required>
+  A short human-readable description of what the agent does. Shown in the agent card in the UI.
+
+  **Example:** `"This Agent Details you through the Complete financial related Data"`
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Display name of the agent. Shown in the agent list and chat header.
+
+  **Example:** `"Financial Agent"`
+</ParamField>
+
+### Complete Request Example
+
+```json
+{
+  "name": "Financial Agent",
+  "description": "This Agent Details you through the Complete financial related Data",
+  "prompt": "Scan this document and extract all key metrics, numbers, and quantitative statements (such as revenue, costs, growth rates, counts, targets, and timelines). Organize them into a structured table with columns for metric name, value, unit, date or period, and a short description of what the metric represents. If there are assumptions or caveats around specific numbers, briefly note those as well.",
+  "isPublished": false,
+  "uiMetadata": {
+    "bestFor": [],
+    "conversationStarters": [],
+    "logo": null,
+    "style": {
+      "logo": {
+        "bgColor": "",
+        "textColor": ""
+      }
+    },
+    "input": {
+      "placeholder": "What is EBITDA? And How Its Calculated"
+    },
+    "capabilities": {
+      "models": {
+        "enabled": true,
+        "supportedModels": [
+          "gpt-5.2",
+          "vertex_ai/claude-opus-4-7",
+          "claude-sonnet-4-6",
+          "claude-haiku-4-5-20251001",
+          "o4-mini"
+        ],
+        "defaultValue": "gpt-5.2"
+      },
+      "allowDownload": true,
+      "conversationFiles": {
+        "enabled": true
+      }
+    }
+  },
+  "configs": {
+    "mcpConfigs": [
+      {
+        "id": 18,
+        "name": "Workspace MCP",
+        "description": "",
+        "url": "https://testing-mcp.datagol.ai/workspace/link-v2?workspace_id=a336506d-540e-4a78-809b-daf501687bca&token=<token>",
+        "transport": "streamable_http",
+        "serverType": "CUSTOM",
+        "companyId": 1
+      },
+      {
+        "id": 35,
+        "name": "New MCP Server",
+        "description": "",
+        "url": "Financial Sub Agent",
+        "transport": "streamable_http",
+        "serverType": "CUSTOM",
+        "companyId": 1
+      },
+      {
+        "serverType": "WORKBOOK",
+        "name": "dg_Order.csv",
+        "description": "",
+        "url": "",
+        "transport": "streamable_http",
+        "data": {
+          "id": "ca45078d-ed26-4752-a7a7-4aed24af033c",
+          "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53"
+        }
+      },
+      {
+        "serverType": "WORKBOOK",
+        "name": "Install Metrics",
+        "description": "",
+        "url": "",
+        "transport": "streamable_http",
+        "data": {
+          "id": "3095f6c0-b399-4e0f-b367-7db38b0a8453",
+          "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53"
+        }
+      }
+    ],
+    "connectors": [
+      {
+        "id": "ec345675-06bf-4133-b8c3-f8fc1934b839",
+        "type": "WORKBOOK_RAG",
+        "sourceType": "BACKEND",
+        "data": {
+          "title": "dg_order_item.csv",
+          "description": "",
+          "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+          "workspaceName": "Link_v2"
+        }
+      },
+      {
+        "id": "753bd2d1-3426-41f2-b78d-a24a5a4cb0dd",
+        "type": "WORKBOOK_RAG",
+        "sourceType": "BACKEND",
+        "data": {
+          "title": "dg_customer.csv",
+          "description": "",
+          "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+          "workspaceName": "Link_v2"
+        }
+      },
+      {
+        "id": "ca45078d-ed26-4752-a7a7-4aed24af033c",
+        "type": "WORKBOOK_RAG",
+        "sourceType": "BACKEND",
+        "data": {
+          "title": "dg_Order.csv",
+          "description": "",
+          "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+          "workspaceName": "Link_v2"
+        }
+      },
+      {
+        "id": "aff24e82-564b-468a-9727-392a08f017bc",
+        "type": "WORKBOOK_RAG",
+        "sourceType": "BACKEND",
+        "data": {
+          "title": "dg_products.csv",
+          "description": "",
+          "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+          "workspaceName": "Link_v2"
+        }
+      },
+      {
+        "id": "3095f6c0-b399-4e0f-b367-7db38b0a8453",
+        "type": "WORKBOOK_RAG",
+        "sourceType": "BACKEND",
+        "data": {
+          "title": "Install Metrics",
+          "description": "",
+          "workspaceId": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+          "workspaceName": "Link_v2"
+        }
+      },
+      {
+        "id": "055b4db3-96e1-45e1-8ff5-3a911b779a53",
+        "type": "WORKSPACE_DOCUMENTS",
+        "sourceType": "BACKEND",
+        "data": {
+          "name": "Link_v2"
+        }
+      },
+      {
+        "id": "bca6c483-9205-4724-81e3-f4340b79efbc",
+        "type": "KNOWLEDGE_BASE",
+        "sourceType": "BACKEND",
+        "data": {
+          "id": "bca6c483-9205-4724-81e3-f4340b79efbc",
+          "companyId": 1,
+          "userId": 371,
+          "type": "GOOGLE_DRIVE",
+          "name": "Mahi Changes Verifications",
+          "status": "ACTIVE",
+          "lastSyncAt": "2026-05-01T18:56:45.544+0000",
+          "lastSyncStatus": "SUCCESS",
+          "sourceId": null,
+          "credentialId": 7219087,
+          "activeConfig": null,
+          "latestRun": {
+            "id": "036f1723-1b57-4e06-9295-17bb24fdbd58",
+            "connectorId": "bca6c483-9205-4724-81e3-f4340b79efbc",
+            "runType": "INCREMENTAL",
+            "status": "SUCCESS",
+            "temporalWorkflowId": "kb-sync-036f1723-1b57-4e06-9295-17bb24fdbd58",
+            "startedAt": "2026-05-01T18:56:44.855+0000",
+            "finishedAt": "2026-05-01T18:56:45.543+0000",
+            "errorMessage": null,
+            "statsJson": {},
+            "checkpointJson": null
+          }
+        }
+      },
+      {
+        "id": "315",
+        "type": "CONNECTOR",
+        "sourceType": "AI"
+      }
+    ],
+    "webSearchEnabled": true,
+    "skillIds": [
+      10,
+      11
+    ]
+  }
+}
+
+```
+
+### Response
+
+```json
+{
+  "id": "7bf5f4d6-743d-414f-aa4a-96f7a20ce0fd",
+  "name": "Financial Agent",
+  "description": "This Agent Details you through the Complete financial related Data",
+  "isPublished": false,
+  "prompt": "...",
+  "configs": { "..." },
+  "uiMetadata": { "..." },
+  "skills": [ "..." ],
+  "createdAt": "2026-05-18T10:00:00.000+0000",
+  "updatedAt": "2026-05-18T10:00:00.000+0000"
+}
+```
+
+---
+
+## POST Share Agent (Bulk Permissions)
+
+**`POST /noCo/api/v2/elementPermissions/bulk`**
+
+Grants one or more users access to a Custom Agent.
+
+<CodeGroup>
+```bash cURL
+curl --location 'https://testing-be.datagol.ai/noCo/api/v2/elementPermissions/bulk' \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "permissions": [
+      {
+        "elementId": "7bf5f4d6-743d-414f-aa4a-96f7a20ce0fd",
+        "elementType": "CUSTOM_AGENT",
+        "userId": 935,
+        "permission": "CREATOR"
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+<ParamField body="permissions" type="array" required>
+  Array of permission grants to apply in a single atomic operation.
+
+  <Expandable title="Permission object fields">
+
+    <ParamField body="permissions[].elementId" type="string (UUID)" required>
+      UUID of the Custom Agent to share. Returned by the create or list agent endpoint.
+    </ParamField>
+
+    <ParamField body="permissions[].elementType" type="string" required>
+      Must be `"CUSTOM_AGENT"` for agent sharing.
+    </ParamField>
+
+    <ParamField body="permissions[].userId" type="integer" required>
+      ID of the user to grant access to. Fetch from `GET /idp/api/v1/team`.
+    </ParamField>
+
+    <ParamField body="permissions[].permission" type="string" required>
+      Permission level to grant.
+
+      | Value | Can View | Can Edit | Can Delete | Can Share |
+      |-------|----------|----------|------------|-----------|
+      | `VIEWER` | Yes | No | No | No |
+      | `EDITOR` | Yes | Yes | No | No |
+      | `CREATOR` | Yes | Yes | Yes | Yes |
+    </ParamField>
+
+  </Expandable>
+</ParamField>
+
+---
+
+## GET Custom Agent Permissions
+
+**`GET /noCo/api/v2/elementPermissions/CUSTOM_AGENT/{agentId}`**
+
+Returns all users who have access to the specified agent and their permission levels.
+
+<ParamField path="agentId" type="string (UUID)" required>
+  UUID of the Custom Agent.
+</ParamField>
+
+<CodeGroup>
+```bash cURL
+curl 'https://testing-be.datagol.ai/noCo/api/v2/elementPermissions/CUSTOM_AGENT/7bf5f4d6-743d-414f-aa4a-96f7a20ce0fd' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json'
+```
+</CodeGroup>
+
+---
+
+## POST Generate Conversation Name
+
+**`POST /ai/api/v1/builder/chat/complete`** _(AI Core service)_
+
+Generates a concise conversation name based on the user's first message. Called automatically after the first message is sent.
+
+**Query params:**
+
+| Param | Value |
+|-------|-------|
+| `resourceType` | `CUSTOM_AGENT` |
+| `resourceId` | UUID of the Custom Agent |
+
+```json Request Body
+{
+  "model": "gpt-4o-mini",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are an advanced AI conversation assistant. Generate a clear and concise name for the conversation that accurately reflects its main topic. Keep it to max 5 words."
+    },
+    {
+      "role": "user",
+      "content": "First User Message:\n```\nSummarise the data\n```"
+    }
+  ],
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "generate_conversation_name",
+        "description": "Use this function to generate a conversation name based on the first user message",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "conversation_name": {
+              "type": "string",
+              "description": "A clear and concise name for the conversation that reflects its main topic"
+            }
+          },
+          "required": ["conversation_name"]
+        }
+      }
+    }
+  ],
+  "tool_choice": "auto"
+}
+```
+
+---
+
+## POST Initiate Conversation
+
+**`POST /ai/api/v2/conversations`**
+
+Opens a new conversation session backed by a Custom Agent. Returns a `conversationId` required for the streaming endpoint.
+
+<CodeGroup>
+```bash cURL
+curl --location 'https://testing-be.datagol.ai/ai/api/v2/conversations' \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "name": "Data Summary Request",
+    "active": true,
+    "scope": "PRIVATE",
+    "userId": 371,
+    "agentType": "CustomAgent",
+    "uiMetadata": {
+      "type": "CustomAgent",
+      "parameters": {
+        "customAgentId": "1526da2b-3264-4118-b141-87857369b0bd",
+        "parameters": {
+          "customAgentId": "1526da2b-3264-4118-b141-87857369b0bd"
+        }
+      },
+      "configuration": {
+        "llmModel": "gpt-5.2"
+      }
+    }
+  }'
+```
+</CodeGroup>
+
+<ParamField body="name" type="string" required>
+  Display name for this conversation. Auto-generated by the naming API (step 3) or user-supplied.
+</ParamField>
+
+<ParamField body="active" type="boolean" required>
+  Always `true` when creating a new conversation.
+</ParamField>
+
+<ParamField body="scope" type="string" required>
+  Visibility of the conversation.
+
+  | Value | Behavior |
+  |-------|----------|
+  | `PRIVATE` | Only the creating user can see this conversation |
+  | `SHARED` | Visible to all users with access to the agent |
+</ParamField>
+
+<ParamField body="userId" type="integer" required>
+  ID of the authenticated user creating the conversation. Must match the token's `userId` claim.
+</ParamField>
+
+<ParamField body="agentType" type="string" required>
+  Must be `"CustomAgent"` for custom agent conversations.
+</ParamField>
+
+<ParamField body="uiMetadata.parameters.customAgentId" type="string (UUID)" required>
+  UUID of the Custom Agent that backs this conversation. Passed twice (at `parameters` and `parameters.parameters`) for backward compatibility.
+</ParamField>
+
+<ParamField body="uiMetadata.configuration.llmModel" type="string" required>
+  Active LLM model for this conversation. Must be a value from `uiMetadata.capabilities.models.supportedModels`.
+</ParamField>
+
+**Response** — returns a `conversationId` (UUID) used in the streaming endpoint.
+
+---
+
+## POST Streaming Message
+
+**`POST /ai/api/v2/messages/streaming`** _(AI Core service)_
+
+Sends a user message to the agent and streams the response as Server-Sent Events (SSE).
+
+<Warning>
+  This endpoint hits `testing-core-ai.datagol.ai`, not `testing-be.datagol.ai`. Ensure your HTTP client supports streaming responses (SSE).
+</Warning>
+
+<CodeGroup>
+```bash cURL
+curl --location 'https://testing-core-ai.datagol.ai/ai/api/v2/messages/streaming' \
+  --header 'Authorization: Bearer <token>' \
+  --header 'Content-Type: application/json' \
+  --header 'credentials: include' \
+  --data '{
+    "agentType": "CustomAgent",
+    "type": "CustomAgent",
+    "conversationId": "ae5ee879-e967-45e4-bca0-c6c78d10bd23",
+    "message": "Summarise the data",
+    "parameters": {
+      "customAgentId": "1526da2b-3264-4118-b141-87857369b0bd"
+    },
+    "uiMetadata": {
+      "parameters": {}
+    },
+    "selectedLlmModel": "gpt-5.2"
+  }'
+```
+</CodeGroup>
+
+<ParamField body="agentType" type="string" required>
+  Must be `"CustomAgent"`.
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Must be `"CustomAgent"`. (Duplicates `agentType` for routing purposes.)
+</ParamField>
+
+<ParamField body="conversationId" type="string (UUID)" required>
+  The conversation ID returned by `POST /ai/api/v2/conversations`.
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  The user's message text to send to the agent.
+</ParamField>
+
+<ParamField body="parameters.customAgentId" type="string (UUID)" required>
+  UUID of the Custom Agent. Must match the agent that backs this conversation.
+</ParamField>
+
+<ParamField body="selectedLlmModel" type="string" required>
+  The model to use for this specific message. Can be changed per message to switch models mid-conversation.
+</ParamField>
+
+<ParamField body="uiMetadata" type="object">
+  Pass as `{ "parameters": {} }` unless overriding model-level parameters.
+</ParamField>
+
+**Response** — SSE stream of delta tokens and tool call events. Parse events with `data: ` prefix.
+
+---
+
+## GET Workspace by ID (Side Panel Context)
+
+**`GET /noCo/api/v2/workspaces/{workspaceId}`**
+
+Fetches workspace details scoped to the current Custom Agent. Called when a user opens the agent from the side panel to load context-specific workspace data.
+
+**Query params:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `resourceType` | string | Always `CUSTOM_AGENT` |
+| `resourceId` | UUID | The Custom Agent UUID |
+
+<CodeGroup>
+```bash cURL
+curl 'https://testing-be.datagol.ai/noCo/api/v2/workspaces/055b4db3-96e1-45e1-8ff5-3a911b779a53?resourceType=CUSTOM_AGENT&resourceId=ac861ca7-d3c6-47ac-be63-abc49344b254' \
+  -H 'Authorization: Bearer <token>' \
+  -H 'Content-Type: application/json'
+```
+</CodeGroup>
+
+---
+
+## Error Handling
+
+All endpoints return standard HTTP status codes.
+
+| Code | Meaning | Common Cause |
+|------|---------|--------------|
+| `200` | Success | — |
+| `400` | Bad Request | Malformed JSON, missing required fields |
+| `401` | Unauthorized | Missing or expired JWT token |
+| `403` | Forbidden | User lacks required permission (`CREATE_COPILOT`, `EDIT_COPILOT`, etc.) |
+| `404` | Not Found | Agent, workspace, or connector ID does not exist in this tenant |
+| `500` | Internal Server Error | Upstream AI service error or unhandled exception |
+
+---
+
+## Required JWT Permissions
+
+The following permissions must be present in the JWT `permissions` array:
+
+| Operation | Required Permission |
+|-----------|-------------------|
+| Create agent | `CREATE_COPILOT` |
+| Edit agent | `EDIT_COPILOT` |
+| Delete agent | `DELETE_COPILOT` |
+| View agents | `VIEW_COPILOT` |
+| Share agent | `ASSIGN_ROLES` |
+| View workspaces | `VIEW_LAKEHOUSE` |
+| View connectors | `VIEW_CONNECTORS` |
+| View users / team | `VIEW_USERS` |
+
+---
+
+## Connector Type Quick Reference
+
+| Type | sourceType | Use Case |
+|------|-----------|----------|
+| `WORKBOOK_RAG` | `BACKEND` | RAG over a single CSV/Excel workbook |
+| `WORKSPACE_DOCUMENTS` | `BACKEND` | RAG over all files in a workspace |
+| `KNOWLEDGE_BASE` | `BACKEND` | Synced Google Drive or web knowledge base |
+| `CONNECTOR` | `AI` | Live data via AI connector instance |
+
+---
+
+## Model ID Reference
+
+| Model ID | Provider | Notes |
+|----------|----------|-------|
+| `gpt-5.2` | OpenAI | GPT-5 series, high capability |
+| `gpt-4.1` | OpenAI | GPT-4.1 |
+| `o4-mini` | OpenAI | Reasoning model, faster and cheaper |
+| `vertex_ai/claude-opus-4-7` | Anthropic via Vertex | Claude Opus on GCP |
+| `claude-opus-4-6` | Anthropic | Claude Opus direct |
+| `claude-sonnet-4-6` | Anthropic | Claude Sonnet, balanced |
+| `claude-haiku-4-5-20251001` | Anthropic | Claude Haiku, fastest |
