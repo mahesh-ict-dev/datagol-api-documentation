@@ -9,7 +9,7 @@
     "dark": "#1e40af"
   },
   "api": {
-    "baseUrl": "https://be.datagol.ai"
+    "baseUrl": ["https://be.datagol.ai", "https://ai.datagol.ai"]
   },
   "seo": {
     "indexing": "all"
