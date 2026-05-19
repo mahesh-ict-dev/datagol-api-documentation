@@ -7,10 +7,14 @@ info:
     name: DataGOL Support
     url: https://datagol.ai
 servers:
+  - url: https://be.datagol.ai
+    description: Backend API (Production) — agent management, conversations, permissions
+  - url: https://ai.datagol.ai
+    description: AI Core (Production) — streaming, chat completion, conversation naming
   - url: https://testing-be.datagol.ai
-    description: Backend API — agent management, conversations, permissions
+    description: Backend API (Testing) — agent management, conversations, permissions
   - url: https://testing-core-ai.datagol.ai
-    description: AI Core — streaming, chat completion, conversation naming
+    description: AI Core (Testing) — streaming, chat completion, conversation naming
 security:
   - BearerAuth: []
 components:
@@ -1273,7 +1277,7 @@ paths:
         '200':
           description: Array of conversation objects.
     post:
-      summary: Initiate a Conversation
+      summary: Create Thread
       description: Opens a new conversation session backed by a Custom Agent. Returns the conversationId required for the streaming endpoint.
       operationId: initiateConversation
       tags:
