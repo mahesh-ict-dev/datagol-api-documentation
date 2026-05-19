@@ -91,10 +91,12 @@ Every request to the DataGOL backend requires a signed JWT passed as a Bearer to
 
 ## Base URLs
 
-| Service | Base URL | Purpose |
-|---------|----------|---------|
-| Backend API | `https://testing-be.datagol.ai` | Agent CRUD, conversations, permissions |
-| AI Core | `https://testing-core-ai.datagol.ai` | Chat completion, streaming |
+| Service | Environment | Base URL | Purpose |
+|---------|-------------|----------|---------|
+| Backend API | Testing | `https://testing-be.datagol.ai` | Agent CRUD, conversations, permissions |
+| Backend API | Production | `https://be.datagol.ai` | Agent CRUD, conversations, permissions |
+| AI Core | Testing | `https://testing-core-ai.datagol.ai` | Chat completion, streaming |
+| AI Core | Production | `https://ai.datagol.ai` | Chat completion, streaming |
 
 ---
 
