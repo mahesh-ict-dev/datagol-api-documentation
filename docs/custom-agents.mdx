@@ -93,9 +93,7 @@ Every request to the DataGOL backend requires a signed JWT passed as a Bearer to
 
 | Service | Environment | Base URL | Purpose |
 |---------|-------------|----------|---------|
-| Backend API | Testing | `https://testing-be.datagol.ai` | Agent CRUD, conversations, permissions |
 | Backend API | Production | `https://be.datagol.ai` | Agent CRUD, conversations, permissions |
-| AI Core | Testing | `https://testing-core-ai.datagol.ai` | Chat completion, streaming |
 | AI Core | Production | `https://ai.datagol.ai` | Chat completion, streaming |
 
 ---
@@ -112,7 +110,7 @@ Before creating an agent you will typically fetch the IDs you need:
 
 <CodeGroup>
 ```bash cURL
-curl 'https://testing-be.datagol.ai/customAgents/api/v1' \
+curl 'https://be.datagol.ai/customAgents/api/v1' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json'
 ```
@@ -136,7 +134,7 @@ Returns all Custom Agents accessible to the authenticated user within their comp
 
 <CodeGroup>
 ```bash cURL
-curl 'https://testing-be.datagol.ai/customAgents/api/v1/f1c6ff59-f4b7-476e-b306-f8531b42863d' \
+curl 'https://be.datagol.ai/customAgents/api/v1/f1c6ff59-f4b7-476e-b306-f8531b42863d' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json'
 ```
@@ -152,7 +150,7 @@ Returns all workspaces in the company tenant. Use `id` values as `workspaceId` i
 
 <CodeGroup>
 ```bash cURL
-curl 'https://testing-be.datagol.ai/noCo/api/v2/workspaces' \
+curl 'https://be.datagol.ai/noCo/api/v2/workspaces' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json'
 ```
@@ -179,7 +177,7 @@ Used by the **Knowledge Base** section in the agent builder UI. Returns a flat l
 
 <CodeGroup>
 ```bash cURL
-curl 'https://testing-be.datagol.ai/noCo/api/v2/workspaces/search?query=&type=TABLE' \
+curl 'https://be.datagol.ai/noCo/api/v2/workspaces/search?query=&type=TABLE' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json'
 ```
@@ -269,7 +267,7 @@ Returns all AI connectors (type `CONNECTOR` / `sourceType: AI`) available to the
 
 <CodeGroup>
 ```bash cURL
-curl 'https://testing-be.datagol.ai/connector/api/v1/instance' \
+curl 'https://be.datagol.ai/connector/api/v1/instance' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json'
 ```
@@ -285,7 +283,7 @@ Returns all users in the company. Use `userId` values when sharing an agent.
 
 <CodeGroup>
 ```bash cURL
-curl 'https://testing-be.datagol.ai/idp/api/v1/team' \
+curl 'https://be.datagol.ai/idp/api/v1/team' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json'
 ```
@@ -311,7 +309,7 @@ Creates a fully configured Custom AI Agent. This is the most complex endpoint â€
 
 <CodeGroup>
 ```bash cURL
-curl --location 'https://testing-be.datagol.ai/customAgents/api/v1' \
+curl --location 'https://be.datagol.ai/customAgents/api/v1' \
   --header 'Authorization: Bearer <token>' \
   --header 'Content-Type: application/json' \
   --data '<see full body below>'
@@ -973,7 +971,7 @@ Grants one or more users access to a Custom Agent.
 
 <CodeGroup>
 ```bash cURL
-curl --location 'https://testing-be.datagol.ai/noCo/api/v2/elementPermissions/bulk' \
+curl --location 'https://be.datagol.ai/noCo/api/v2/elementPermissions/bulk' \
   --header 'Authorization: Bearer <token>' \
   --header 'Content-Type: application/json' \
   --data '{
@@ -1033,7 +1031,7 @@ Returns all users who have access to the specified agent and their permission le
 
 <CodeGroup>
 ```bash cURL
-curl 'https://testing-be.datagol.ai/noCo/api/v2/elementPermissions/CUSTOM_AGENT/7bf5f4d6-743d-414f-aa4a-96f7a20ce0fd' \
+curl 'https://be.datagol.ai/noCo/api/v2/elementPermissions/CUSTOM_AGENT/7bf5f4d6-743d-414f-aa4a-96f7a20ce0fd' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json'
 ```
@@ -1100,7 +1098,7 @@ Opens a new conversation session backed by a Custom Agent. Returns a `conversati
 
 <CodeGroup>
 ```bash cURL
-curl --location 'https://testing-be.datagol.ai/ai/api/v2/conversations' \
+curl --location 'https://be.datagol.ai/ai/api/v2/conversations' \
   --header 'Authorization: Bearer <token>' \
   --header 'Content-Type: application/json' \
   --data '{
@@ -1169,12 +1167,12 @@ curl --location 'https://testing-be.datagol.ai/ai/api/v2/conversations' \
 Sends a user message to the agent and streams the response as Server-Sent Events (SSE).
 
 <Warning>
-  This endpoint hits `testing-core-ai.datagol.ai`, not `testing-be.datagol.ai`. Ensure your HTTP client supports streaming responses (SSE).
+  This endpoint hits `ai.datagol.ai`, not `be.datagol.ai`. Ensure your HTTP client supports streaming responses (SSE).
 </Warning>
 
 <CodeGroup>
 ```bash cURL
-curl --location 'https://testing-core-ai.datagol.ai/ai/api/v2/messages/streaming' \
+curl --location 'https://ai.datagol.ai/ai/api/v2/messages/streaming' \
   --header 'Authorization: Bearer <token>' \
   --header 'Content-Type: application/json' \
   --header 'credentials: include' \
@@ -1241,7 +1239,7 @@ Fetches workspace details scoped to the current Custom Agent. Called when a user
 
 <CodeGroup>
 ```bash cURL
-curl 'https://testing-be.datagol.ai/noCo/api/v2/workspaces/055b4db3-96e1-45e1-8ff5-3a911b779a53?resourceType=CUSTOM_AGENT&resourceId=ac861ca7-d3c6-47ac-be63-abc49344b254' \
+curl 'https://be.datagol.ai/noCo/api/v2/workspaces/055b4db3-96e1-45e1-8ff5-3a911b779a53?resourceType=CUSTOM_AGENT&resourceId=ac861ca7-d3c6-47ac-be63-abc49344b254' \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json'
 ```
@@ -1264,22 +1262,6 @@ All endpoints return standard HTTP status codes.
 
 ---
 
-## Required JWT Permissions
-
-The following permissions must be present in the JWT `permissions` array:
-
-| Operation | Required Permission |
-|-----------|-------------------|
-| Create agent | `CREATE_COPILOT` |
-| Edit agent | `EDIT_COPILOT` |
-| Delete agent | `DELETE_COPILOT` |
-| View agents | `VIEW_COPILOT` |
-| Share agent | `ASSIGN_ROLES` |
-| View workspaces | `VIEW_LAKEHOUSE` |
-| View connectors | `VIEW_CONNECTORS` |
-| View users / team | `VIEW_USERS` |
-
----
 
 ## Connector Type Quick Reference
 

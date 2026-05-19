@@ -11,10 +11,6 @@ servers:
     description: Backend API (Production) — agent management, conversations, permissions
   - url: https://ai.datagol.ai
     description: AI Core (Production) — streaming, chat completion, conversation naming
-  - url: https://testing-be.datagol.ai
-    description: Backend API (Testing) — agent management, conversations, permissions
-  - url: https://testing-core-ai.datagol.ai
-    description: AI Core (Testing) — streaming, chat completion, conversation naming
 security:
   - BearerAuth: []
 components:
@@ -1325,12 +1321,12 @@ paths:
   /ai/api/v2/messages/streaming:
     post:
       summary: Stream a Message to the Agent
-      description: 'Sends a user message and streams the AI response as Server-Sent Events (SSE). This endpoint is on the AI Core service (testing-core-ai.datagol.ai). Requires the `credentials: include` header.'
+      description: 'Sends a user message and streams the AI response as Server-Sent Events (SSE). This endpoint is on the AI Core service (ai.datagol.ai). Requires the `credentials: include` header.'
       operationId: streamMessage
       tags:
         - Messaging
       servers:
-        - url: https://testing-core-ai.datagol.ai
+        - url: https://ai.datagol.ai
           description: AI Core service
       requestBody:
         required: true
@@ -1364,7 +1360,7 @@ paths:
 #      tags:
 #        - Messaging
 #      servers:
-#        - url: https://testing-core-ai.datagol.ai
+#        - url: https://ai.datagol.ai
 #          description: AI Core service
 #      parameters:
 #        - name: resourceType
