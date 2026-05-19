@@ -1325,9 +1325,6 @@ paths:
       operationId: streamMessage
       tags:
         - Messaging
-      servers:
-        - url: https://ai.datagol.ai
-          description: AI Core service
       requestBody:
         required: true
         content:
