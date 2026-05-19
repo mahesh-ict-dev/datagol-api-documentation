@@ -1351,57 +1351,58 @@ paths:
             text/event-stream:
               schema:
                 type: string
-  /ai/api/v1/builder/chat/complete:
-    post:
-      summary: Generate Conversation Name
-      description: 'Step 3 in the conversation lifecycle. Generates a concise ≤5-word conversation name from the user''s first message using `gpt-4o-mini` and a structured tool call. Called client-side the moment the user submits their first message — before the conversation record is created — so the UI can display a meaningful title immediately. The `generate_conversation_name` tool is forced via `tool_choice: auto`.'
-      operationId: generateConversationName
-      tags:
-        - Messaging
-      servers:
-        - url: https://testing-core-ai.datagol.ai
-          description: AI Core service
-      parameters:
-        - name: resourceType
-          in: query
-          required: true
-          schema:
-            type: string
-            enum:
-              - CUSTOM_AGENT
-          example: CUSTOM_AGENT
-        - name: resourceId
-          in: query
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: UUID of the Custom Agent.
-          example: 1526da2b-3264-4118-b141-87857369b0bd
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                model:
-                  type: string
-                  example: gpt-4o-mini
-                messages:
-                  type: array
-                  items:
-                    type: object
-                tools:
-                  type: array
-                  items:
-                    type: object
-                tool_choice:
-                  type: string
-                  example: auto
-      responses:
-        '200':
-          description: Tool call response containing the generated conversation_name.
+# Uncomment to re-enable the Generate Conversation Name API
+#  /ai/api/v1/builder/chat/complete:
+#    post:
+#      summary: Generate Conversation Name
+#      description: 'Step 3 in the conversation lifecycle. Generates a concise ≤5-word conversation name from the user''s first message using `gpt-4o-mini` and a structured tool call. Called client-side the moment the user submits their first message — before the conversation record is created — so the UI can display a meaningful title immediately. The `generate_conversation_name` tool is forced via `tool_choice: auto`.'
+#      operationId: generateConversationName
+#      tags:
+#        - Messaging
+#      servers:
+#        - url: https://testing-core-ai.datagol.ai
+#          description: AI Core service
+#      parameters:
+#        - name: resourceType
+#          in: query
+#          required: true
+#          schema:
+#            type: string
+#            enum:
+#              - CUSTOM_AGENT
+#          example: CUSTOM_AGENT
+#        - name: resourceId
+#          in: query
+#          required: true
+#          schema:
+#            type: string
+#            format: uuid
+#          description: UUID of the Custom Agent.
+#          example: 1526da2b-3264-4118-b141-87857369b0bd
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              type: object
+#              properties:
+#                model:
+#                  type: string
+#                  example: gpt-4o-mini
+#                messages:
+#                  type: array
+#                  items:
+#                    type: object
+#                tools:
+#                  type: array
+#                  items:
+#                    type: object
+#                tool_choice:
+#                  type: string
+#                  example: auto
+#      responses:
+#        '200':
+#          description: Tool call response containing the generated conversation_name.
 tags:
   - name: Custom Agents
     description: Create, read, and manage Custom AI Agents.
