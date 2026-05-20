@@ -13,13 +13,42 @@ servers:
     description: AI Core (Production) — streaming, chat completion, conversation naming
 security:
   - BearerAuth: []
+  - ServiceAccountAuth: []
 components:
   securitySchemes:
     BearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: 'JWT token issued by the DataGOL Identity Provider. Embed `Authorization: Bearer <token>` in every request. Tokens contain `companyId`, `userId`, `roles`, and `permissions` claims.'
+      description: >
+        Two authentication methods are supported:
+
+        **1. Bearer Token (JWT)**
+        JWT token issued by the DataGOL Identity Provider.
+        Embed `Authorization: Bearer <token>` in every request.
+        Tokens contain `companyId`, `userId`, `roles`, and `permissions` claims.
+
+        **2. Service Account Key**
+        For server-to-server or automated access, use a DataGOL Service Account key.
+        Pass it via the `x-auth-token` header instead of `Authorization`:
+        `x-auth-token: <service-account-key>`
+
+    ServiceAccountAuth:
+      type: apiKey
+      in: header
+      name: x-auth-token
+      description: >
+        Two authentication methods are supported:
+        
+        **1. Bearer Token (JWT)**
+        JWT token issued by the DataGOL Identity Provider.
+        Embed `Authorization: Bearer <token>` in every request.
+        Tokens contain `companyId`, `userId`, `roles`, and `permissions` claims.
+        
+        **2. Service Account Key**
+        For server-to-server or automated access, use a DataGOL Service Account key.
+        Pass it via the `x-auth-token` header instead of `Authorization`:
+        `x-auth-token: <service-account-key>`
   schemas:
     WorkbookSearchItem:
       type: object
@@ -735,7 +764,7 @@ components:
           example: PRIVATE
         userId:
           type: integer
-          description: ID of the authenticated user. Must match the token's userId claim.
+          description: ID of the authenticated user or service account
           example: 371
         agentType:
           type: string
@@ -761,12 +790,6 @@ components:
                   format: uuid
                   description: UUID of the Custom Agent backing this conversation.
                   example: 1526da2b-3264-4118-b141-87857369b0bd
-                parameters:
-                  type: object
-                  properties:
-                    customAgentId:
-                      type: string
-                      format: uuid
             configuration:
               type: object
               properties:
@@ -1294,8 +1317,6 @@ paths:
                 type: CustomAgent
                 parameters:
                   customAgentId: 1526da2b-3264-4118-b141-87857369b0bd
-                  parameters:
-                    customAgentId: 1526da2b-3264-4118-b141-87857369b0bd
                 configuration:
                   llmModel: gpt-5.2
       responses:
