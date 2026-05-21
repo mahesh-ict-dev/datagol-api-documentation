@@ -844,6 +844,112 @@ components:
           type: string
           description: Model for this specific message. Can be changed per message to switch models mid-conversation.
           example: gpt-5.2
+    ConversationMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Internal unique message identifier.
+          example: 7902
+        conversationId:
+          type: string
+          format: uuid
+          description: Back-reference to the parent conversation UUID.
+          example: c920e1f5-2ac7-4f17-aed7-b260e464c022
+        userId:
+          type: integer
+          description: The structural ID of the user authoring the text.
+          example: 206
+        userQuery:
+          type: string
+          description: The exact prompt raw input supplied by the user.
+          example: "Can you do some analysis on this data?"
+        modelResponse:
+          type: array
+          description: Content block payload parts yielded by the processing model.
+          items:
+            $ref: '#/components/schemas/ModelResponseBlock'
+        uiMetadata:
+          type: object
+          nullable: true
+          description: Client UI specific flags or tracking configurations.
+        messageMetadata:
+          $ref: '#/components/schemas/MessageMetadata'
+        isPinned:
+          type: boolean
+          description: Flags whether this thread item was pinned in the interface.
+          example: false
+        timestamp:
+          type: string
+          format: date-time
+          description: Message generation window log timestamp.
+          example: "2025-11-04T18:24:59.695784Z"
+        feedback:
+          type: object
+          nullable: true
+          description: User satisfaction feedback payload data.
+
+    ModelResponseBlock:
+      type: object
+      properties:
+        code:
+          type: string
+          nullable: true
+          description: Isolated code segment if format type requires extraction.
+        data:
+          type: string
+          description: Main textual response or markdown block data string.
+          example: "Here's the plan and step-by-step pseudo-code for the RFM analysis..."
+        type:
+          type: string
+          description: Format payload classification tag.
+          example: "TEXT"
+        state:
+          type: string
+          nullable: true
+        message:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          nullable: true
+
+    MessageMetadata:
+      type: object
+      properties:
+        chainId:
+          type: string
+          description: Unique orchestration trace track ID.
+          example: "1762280699"
+        agentType:
+          type: string
+          description: The core executing processor class tag name.
+          example: "NewPythonAgent"
+        workbookId:
+          type: string
+          nullable: true
+        executionData:
+          type: array
+          description: Step traces recording diagnostic multi-agent tool execution steps.
+          items:
+            $ref: '#/components/schemas/ExecutionTraceItem'
+
+    ExecutionTraceItem:
+      type: object
+      properties:
+        content:
+          oneOf:
+            - type: string
+              description: Text data, raw code string, or HTML dataframe representations.
+            - type: object
+              description: Structured structural step metadata maps.
+          example:
+            agent: "Expert Selector"
+            model: "o4-mini"
+        response_type:
+          type: string
+          description: Internal node process event tags classification.
+          example: "tool_start"
 paths:
   /customAgents/api/v1:
     get:
@@ -1369,6 +1475,64 @@ paths:
             text/event-stream:
               schema:
                 type: string
+  /conversations/{conversationId}/messages:
+    get:
+      summary: Get Conversation Messages
+      description: Retrieves a chronologically ordered list of user messages, AI responses, and deep system agent routing execution data for a specific conversation thread.
+      operationId: getConversationMessages
+      tags:
+        - Messaging
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          description: The unique UUID identifying the conversation thread.
+          schema:
+            type: string
+            format: uuid
+            example: 6718e680-194b-47fb-b8f6-029b35565b99
+      responses:
+        '200':
+          description: A JSON array containing the message history list along with agent analytics metadata.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConversationMessage'
+              example:
+                - id: 7902
+                  conversationId: "c920e1f5-2ac7-4f17-aed7-b260e464c022"
+                  userId: 206
+                  userQuery: "Can you do a RFM analysis on this data?"
+                  modelResponse:
+                    - code: null
+                      data: "Here’s the plan and step-by-step pseudo-code for the RFM analysis, followed by a complete, executable Python script...\n\n```python\nimport pandas as pd\nimport numpy as np..."
+                      type: "TEXT"
+                      state: null
+                      message: null
+                      metadata: null
+                  uiMetadata: null
+                  messageMetadata:
+                    chainId: "1762280699"
+                    agentType: "NewPythonAgent"
+                    workbookId: null
+                    executionData:
+                      - content: "<table class=\"dataframe dataframe\">\n  <thead>\n    <tr style=\"text-align: right;\">\n      <th>user_id</th>\n      <th>email</th>\n      <th>full_name</th>..."
+                        response_type: "dataframe"
+                      - content:
+                          agent: "Expert Selector"
+                          model: "o4-mini"
+                        response_type: "tool_start"
+                      - content:
+                          input: "Reasoning Effort: medium"
+                          action: "Thinking"
+                        response_type: "tool_call"
+                      - content: "requires_dataset: true\nexpert: \"Data Analyst\"\nconfidence: 9"
+                        response_type: "processing"
+                  isPinned: false
+                  timestamp: "2025-11-04T18:24:59.695784Z"
+                  feedback: null
 # Uncomment to re-enable the Generate Conversation Name API
 #  /ai/api/v1/builder/chat/complete:
 #    post:
