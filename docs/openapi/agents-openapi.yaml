@@ -950,6 +950,197 @@ components:
           type: string
           description: Internal node process event tags classification.
           example: "tool_start"
+
+    StreamEventMessageId:
+      type: object
+      description: >
+        First event of every agent turn. Contains the server-assigned numeric id for
+        this message. Stash it if you need a handle to the in-progress message;
+        otherwise you can safely ignore it.
+      required:
+        - response_type
+        - content
+      properties:
+        response_type:
+          type: string
+          enum:
+            - message_id
+        content:
+          type: integer
+          description: Server-assigned message id.
+          example: 7903
+
+    StreamEventText:
+      type: object
+      description: >
+        A streaming text chunk from the assistant. Delivered incrementally — often
+        a few words or one bullet point at a time, with markdown formatting.
+        **Append** each chunk to the in-progress assistant message; do not replace it.
+      required:
+        - response_type
+        - content
+      properties:
+        response_type:
+          type: string
+          enum:
+            - text
+        content:
+          type: string
+          description: Partial assistant text chunk (markdown).
+          example: "Here is a summary of the top 5 customers by revenue:\n\n"
+
+    StreamEventToolCallContent:
+      type: object
+      description: Payload for a tool_call event.
+      required:
+        - action
+        - input
+        - tool_call_id
+      properties:
+        action:
+          type: string
+          description: Name of the tool being invoked (e.g. the MCP tool name).
+          example: sales-activity_get_table_schema
+        input:
+          type: object
+          description: Argument map passed to the tool. Shape varies per tool.
+          example:
+            workbook_id: ca45078d-ed26-4752-a7a7-4aed24af033c
+        tool_call_id:
+          type: string
+          description: >
+            Opaque identifier assigned by the server to this tool invocation.
+            Match it against the `tool_call_id` in the corresponding
+            `subagent_task_end` event to correlate input and output.
+          example: toolu_01XJ5vBNkPboGSf3iD8Vpxyz
+
+    StreamEventToolCall:
+      type: object
+      description: >
+        The agent is invoking a tool (e.g. an MCP tool or built-in capability).
+        Render an inline "running tool …" indicator in the UI. When the matching
+        `subagent_task_end` event arrives (same `tool_call_id`), mark the tool as
+        finished.
+      required:
+        - response_type
+        - content
+      properties:
+        response_type:
+          type: string
+          enum:
+            - tool_call
+        content:
+          $ref: '#/components/schemas/StreamEventToolCallContent'
+
+    StreamEventToolResponse:
+      type: object
+      description: A single item in the tool_response array inside a subagent_task_end event.
+      required:
+        - type
+        - text
+      properties:
+        type:
+          type: string
+          enum:
+            - text
+        text:
+          type: string
+          description: >
+            JSON-encoded string containing the actual tool result payload. Call
+            `JSON.parse(text)` a second time to obtain the structured data
+            (e.g. a workbook schema object).
+          example: "{\"columns\":[{\"id\":\"col_1\",\"title\":\"order_id\",\"type\":\"TEXT\"}]}"
+
+    StreamEventSubagentTaskEndContent:
+      type: object
+      description: Payload for a subagent_task_end event.
+      required:
+        - tool_call_id
+        - tool_response
+      properties:
+        tool_call_id:
+          type: string
+          description: >
+            Matches the `tool_call_id` from the earlier `tool_call` event for
+            this invocation.
+          example: toolu_01XJ5vBNkPboGSf3iD8Vpxyz
+        tool_response:
+          type: array
+          description: >
+            Result from the tool. Always an array with a single element of type
+            `text`. The `text` field is a **double-encoded JSON string** — call
+            `JSON.parse(tool_response[0].text)` to get the actual payload
+            (e.g. a workbook schema, query result, etc.).
+          items:
+            $ref: '#/components/schemas/StreamEventToolResponse'
+
+    StreamEventSubagentTaskEnd:
+      type: object
+      description: >
+        The tool invocation identified by `tool_call_id` has finished.
+        `tool_response[0].text` is a JSON-encoded string — call `JSON.parse`
+        on it again to obtain the actual structured payload. Mark the matching
+        `tool_call` indicator as done.
+      required:
+        - response_type
+        - content
+      properties:
+        response_type:
+          type: string
+          enum:
+            - subagent_task_end
+        content:
+          $ref: '#/components/schemas/StreamEventSubagentTaskEndContent'
+
+    StreamEventHtml:
+      type: object
+      description: >
+        A complete HTML or SVG fragment produced by the agent — typically a chart,
+        data table, or other rich visualization. Render it inside a sandboxed
+        `<iframe srcdoc="…">` so its `<style>` blocks do not leak into the host page
+        and any embedded scripts cannot access the host frame. Do **not** inject it
+        via `dangerouslySetInnerHTML` or equivalent.
+      required:
+        - response_type
+        - content
+      properties:
+        response_type:
+          type: string
+          enum:
+            - html
+        content:
+          type: string
+          description: Self-contained HTML/SVG markup ready for sandboxed rendering.
+          example: "<div style=\"font-family:sans-serif\"><table><thead><tr><th>Customer</th><th>Revenue</th></tr></thead><tbody><tr><td>Acme Corp</td><td>$1,200,000</td></tr></tbody></table></div>"
+
+    StreamEvent:
+      description: >
+        A single Server-Sent Event emitted by the streaming endpoint. Each SSE
+        `data:` line contains a JSON object with a `response_type` discriminator
+        field and a `content` field whose shape depends on the type.
+
+
+        **Ordering within a turn:**
+        1. `message_id` — always first; provides the server-assigned id.
+        2. One or more `text` / `tool_call` / `subagent_task_end` / `html` events interleaved.
+
+
+        **Unknown types:** ignore any `response_type` value not listed here —
+        new event types may be added in future versions and must not cause errors.
+      oneOf:
+        - $ref: '#/components/schemas/StreamEventMessageId'
+        - $ref: '#/components/schemas/StreamEventText'
+        - $ref: '#/components/schemas/StreamEventToolCall'
+        - $ref: '#/components/schemas/StreamEventSubagentTaskEnd'
+        - $ref: '#/components/schemas/StreamEventHtml'
+      discriminator:
+        propertyName: response_type
+        mapping:
+          message_id: '#/components/schemas/StreamEventMessageId'
+          text: '#/components/schemas/StreamEventText'
+          tool_call: '#/components/schemas/StreamEventToolCall'
+          subagent_task_end: '#/components/schemas/StreamEventSubagentTaskEnd'
+          html: '#/components/schemas/StreamEventHtml'
 paths:
   /customAgents/api/v1:
     get:
@@ -1470,11 +1661,46 @@ paths:
               selectedLlmModel: gpt-5.2
       responses:
         '200':
-          description: SSE stream of delta tokens and tool call events. Parse events with `data:` prefix.
+          description: >
+            Server-Sent Events (SSE) stream. Each event is delivered as a `data: <json>\n\n`
+            line. Parse the JSON payload and switch on the `response_type` field.
+
+
+            **Event types**
+
+            | `response_type` | `content` shape | Behaviour |
+            |---|---|---|
+            | `message_id` | `number` | First event of the turn — server-assigned message id. |
+            | `text` | `string` | Incremental assistant text chunk (markdown). Append to the in-progress message. |
+            | `tool_call` | `{ action, input, tool_call_id }` | Agent is invoking a tool. Show a "running tool" indicator. |
+            | `subagent_task_end` | `{ tool_call_id, tool_response[0].text }` | Tool finished. `tool_response[0].text` is double-JSON-encoded — parse it again to get the payload. |
+            | `html` | `string` | Complete HTML/SVG visualisation. Render in a sandboxed `<iframe srcdoc>`. |
+            | *(any other)* | — | Ignore safely (forward-compatibility). |
           content:
             text/event-stream:
               schema:
-                type: string
+                $ref: '#/components/schemas/StreamEvent'
+              examples:
+                message_id:
+                  summary: Turn starts — server assigns a message id
+                  value: |
+                    data: {"response_type":"message_id","content":7903}
+                text_chunk:
+                  summary: Incremental assistant text chunk
+                  value: |
+                    data: {"response_type":"text","content":"Here is a summary of the top 5 customers:\n\n"}
+                tool_call:
+                  summary: Agent invokes an MCP tool
+                  value: |
+                    data: {"response_type":"tool_call","content":{"action":"sales-activity_get_table_schema","input":{"workbook_id":"ca45078d-ed26-4752-a7a7-4aed24af033c"},"tool_call_id":"toolu_01XJ5vBNkPboGSf3iD8Vpxyz"}}
+                subagent_task_end:
+                  summary: Tool result returned (tool_response[0].text is double-JSON-encoded)
+                  value: |
+                    data: {"response_type":"subagent_task_end","content":{"tool_call_id":"toolu_01XJ5vBNkPboGSf3iD8Vpxyz","tool_response":[{"type":"text","text":"{\"columns\":[{\"id\":\"col_1\",\"title\":\"order_id\",\"type\":\"TEXT\"}],\"primaryKeyColumnName\":\"col_1\"}"}]}}
+                html_visualization:
+                  summary: Rich HTML chart or table visualization
+                  value: |
+                    data: {"response_type":"html","content":"<div style=\"font-family:sans-serif\"><table><thead><tr><th>Customer</th><th>Revenue</th></tr></thead><tbody><tr><td>Acme Corp</td><td>$1,200,000</td></tr></tbody></table></div>"}
   /conversations/{conversationId}/messages:
     get:
       summary: Get Conversation Messages
