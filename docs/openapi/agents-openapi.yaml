@@ -1552,7 +1552,7 @@ paths:
   /ai/api/v2/messages/streaming:
     post:
       summary: Stream a Message to the Agent
-      description: 'Sends a user message and streams the AI response as Server-Sent Events (SSE). This endpoint is on the AI Core service (ai.datagol.ai). Requires the `credentials: include` header.'
+      description: 'Sends a user message and streams the AI response as Server-Sent Events (SSE). This endpoint is on the AI Core service (ai.datagol.ai).'
       operationId: streamMessage
       tags:
         - Messaging
