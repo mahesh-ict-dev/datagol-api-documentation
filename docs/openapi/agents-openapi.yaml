@@ -12,8 +12,8 @@ servers:
   - url: https://ai.datagol.ai
     description: AI Core (Production) — streaming, chat completion, conversation naming
 security:
-  - BearerAuth: []
   - ServiceAccountAuth: []
+  - BearerAuth: []
 components:
   securitySchemes:
     BearerAuth:
@@ -21,34 +21,18 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: >
-        Two authentication methods are supported:
-
-        **1. Bearer Token (JWT)**
         JWT token issued by the DataGOL Identity Provider.
         Embed `Authorization: Bearer <token>` in every request.
         Tokens contain `companyId`, `userId`, `roles`, and `permissions` claims.
-
-        **2. Service Account Key**
-        For server-to-server or automated access, use a DataGOL Service Account key.
-        Pass it via the `x-auth-token` header instead of `Authorization`:
-        `x-auth-token: <service-account-key>`
 
     ServiceAccountAuth:
       type: apiKey
       in: header
       name: x-auth-token
       description: >
-        Two authentication methods are supported:
-        
-        **1. Bearer Token (JWT)**
-        JWT token issued by the DataGOL Identity Provider.
-        Embed `Authorization: Bearer <token>` in every request.
-        Tokens contain `companyId`, `userId`, `roles`, and `permissions` claims.
-        
-        **2. Service Account Key**
         For server-to-server or automated access, use a DataGOL Service Account key.
-        Pass it via the `x-auth-token` header instead of `Authorization`:
-        `x-auth-token: <service-account-key>`
+                Pass it via the `x-auth-token` header instead of `Authorization`:
+                `x-auth-token: <service-account-key>`
   schemas:
     WorkbookSearchItem:
       type: object
@@ -741,9 +725,6 @@ components:
       type: object
       required:
         - name
-        - active
-        - scope
-        - userId
         - agentType
         - uiMetadata
       properties:
@@ -751,21 +732,6 @@ components:
           type: string
           description: Display name for this conversation.
           example: Data Summary Request
-        active:
-          type: boolean
-          description: Always true when creating a new conversation.
-          example: true
-        scope:
-          type: string
-          enum:
-            - PRIVATE
-            - SHARED
-          description: PRIVATE = only the creating user can see it. SHARED = visible to all users with agent access.
-          example: PRIVATE
-        userId:
-          type: integer
-          description: ID of the authenticated user or service account
-          example: 371
         agentType:
           type: string
           enum:
@@ -834,12 +800,6 @@ components:
               format: uuid
               description: UUID of the Custom Agent. Must match the agent backing this conversation.
               example: 1526da2b-3264-4118-b141-87857369b0bd
-        uiMetadata:
-          type: object
-          description: 'Pass as { parameters: {} } unless overriding model-level parameters.'
-          properties:
-            parameters:
-              type: object
         selectedLlmModel:
           type: string
           description: Model for this specific message. Can be changed per message to switch models mid-conversation.
@@ -957,9 +917,6 @@ components:
         First event of every agent turn. Contains the server-assigned numeric id for
         this message. Stash it if you need a handle to the in-progress message;
         otherwise you can safely ignore it.
-      required:
-        - response_type
-        - content
       properties:
         response_type:
           type: string
@@ -976,9 +933,6 @@ components:
         A streaming text chunk from the assistant. Delivered incrementally — often
         a few words or one bullet point at a time, with markdown formatting.
         **Append** each chunk to the in-progress assistant message; do not replace it.
-      required:
-        - response_type
-        - content
       properties:
         response_type:
           type: string
@@ -992,10 +946,6 @@ components:
     StreamEventToolCallContent:
       type: object
       description: Payload for a tool_call event.
-      required:
-        - action
-        - input
-        - tool_call_id
       properties:
         action:
           type: string
@@ -1021,9 +971,6 @@ components:
         Render an inline "running tool …" indicator in the UI. When the matching
         `subagent_task_end` event arrives (same `tool_call_id`), mark the tool as
         finished.
-      required:
-        - response_type
-        - content
       properties:
         response_type:
           type: string
@@ -1035,9 +982,6 @@ components:
     StreamEventToolResponse:
       type: object
       description: A single item in the tool_response array inside a subagent_task_end event.
-      required:
-        - type
-        - text
       properties:
         type:
           type: string
@@ -1054,9 +998,6 @@ components:
     StreamEventSubagentTaskEndContent:
       type: object
       description: Payload for a subagent_task_end event.
-      required:
-        - tool_call_id
-        - tool_response
       properties:
         tool_call_id:
           type: string
@@ -1081,9 +1022,6 @@ components:
         `tool_response[0].text` is a JSON-encoded string — call `JSON.parse`
         on it again to obtain the actual structured payload. Mark the matching
         `tool_call` indicator as done.
-      required:
-        - response_type
-        - content
       properties:
         response_type:
           type: string
@@ -1100,9 +1038,6 @@ components:
         `<iframe srcdoc="…">` so its `<style>` blocks do not leak into the host page
         and any embedded scripts cannot access the host frame. Do **not** inject it
         via `dangerouslySetInnerHTML` or equivalent.
-      required:
-        - response_type
-        - content
       properties:
         response_type:
           type: string
@@ -1114,25 +1049,6 @@ components:
           example: "<div style=\"font-family:sans-serif\"><table><thead><tr><th>Customer</th><th>Revenue</th></tr></thead><tbody><tr><td>Acme Corp</td><td>$1,200,000</td></tr></tbody></table></div>"
 
     StreamEvent:
-      description: >
-        A single Server-Sent Event emitted by the streaming endpoint. Each SSE
-        `data:` line contains a JSON object with a `response_type` discriminator
-        field and a `content` field whose shape depends on the type.
-
-
-        **Ordering within a turn:**
-        1. `message_id` — always first; provides the server-assigned id.
-        2. One or more `text` / `tool_call` / `subagent_task_end` / `html` events interleaved.
-
-
-        **Unknown types:** ignore any `response_type` value not listed here —
-        new event types may be added in future versions and must not cause errors.
-      oneOf:
-        - $ref: '#/components/schemas/StreamEventMessageId'
-        - $ref: '#/components/schemas/StreamEventText'
-        - $ref: '#/components/schemas/StreamEventToolCall'
-        - $ref: '#/components/schemas/StreamEventSubagentTaskEnd'
-        - $ref: '#/components/schemas/StreamEventHtml'
       discriminator:
         propertyName: response_type
         mapping:
@@ -1606,9 +1522,6 @@ paths:
               $ref: '#/components/schemas/InitiateConversationRequest'
             example:
               name: Data Summary Request
-              active: true
-              scope: PRIVATE
-              userId: 371
               agentType: CustomAgent
               uiMetadata:
                 type: CustomAgent
@@ -1656,26 +1569,20 @@ paths:
               message: Summarise the data
               parameters:
                 customAgentId: 1526da2b-3264-4118-b141-87857369b0bd
-              uiMetadata:
-                parameters: {}
               selectedLlmModel: gpt-5.2
       responses:
         '200':
-          description: >
-            Server-Sent Events (SSE) stream. Each event is delivered as a `data: <json>\n\n`
-            line. Parse the JSON payload and switch on the `response_type` field.
-
-
-            **Event types**
-
-            | `response_type` | `content` shape | Behaviour |
-            |---|---|---|
-            | `message_id` | `number` | First event of the turn — server-assigned message id. |
-            | `text` | `string` | Incremental assistant text chunk (markdown). Append to the in-progress message. |
-            | `tool_call` | `{ action, input, tool_call_id }` | Agent is invoking a tool. Show a "running tool" indicator. |
-            | `subagent_task_end` | `{ tool_call_id, tool_response[0].text }` | Tool finished. `tool_response[0].text` is double-JSON-encoded — parse it again to get the payload. |
-            | `html` | `string` | Complete HTML/SVG visualisation. Render in a sandboxed `<iframe srcdoc>`. |
-            | *(any other)* | — | Ignore safely (forward-compatibility). |
+          description: |
+            Below is the mapping of each event type, its structure, and required frontend handling.
+            
+            | Response Type (`response_type`) | Content Structure (`content`) | Frontend Behavior & Handling Rules |
+            | :--- | :--- | :--- |
+            | **`message_id`** | `integer` (e.g., `7903`) | **First event of every agent turn.** Provides the server-assigned numeric ID. Stash it if you need a handle; otherwise, safely ignore it. |
+            | **`text`** | `string` (Markdown chunk) | **Streaming text chunk.** Delivered incrementally. **Append** each chunk to the in-progress message; do not replace it. |
+            | **`tool_call`** | `object` (`{action, input, tool_call_id}`) | **Agent invoking a tool.** Render an inline "running tool..." indicator in the UI. Track `tool_call_id`. |
+            | **`subagent_task_end`** | `object` (`{tool_call_id, tool_response}`) | **Tool finished.** Match `tool_call_id` to stop the spinner. <br><br>**CRITICAL:** `tool_response[0].text` is a **double-encoded JSON string**. You must call `JSON.parse()` a *second* time to extract the actual structured payload. |
+            | **`html`** | `string` (HTML/SVG fragment) | **Rich visualization.** <br><br>**SECURITY RULE:** Render this content strictly inside a sandboxed `<iframe srcdoc="...">` so encapsulated styles do not leak. **Do not** inject via `dangerouslySetInnerHTML`. |
+            | *(Any other type)* | *Varies / Unknown* | **Forward-compatibility.** Safely ignore unlisted types to prevent application crashes as new events are introduced. |
           content:
             text/event-stream:
               schema:
