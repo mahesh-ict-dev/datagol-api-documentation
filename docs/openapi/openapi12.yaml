@@ -231,8 +231,8 @@ paths:
                 password:
                   type: string
             example:
-              email: sai+1000@inncretech.com
-              password: Demo12#$
+              email: sample_email@datagol.com
+              password: Password123
   /idp/api/v1/company/serviceAccount:
     post:
       summary: Create Service Account
