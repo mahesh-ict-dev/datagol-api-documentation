@@ -16,6 +16,911 @@ components:
       bearerFormat: JWT
       description: |
         This API uses OAuth 2.0 with the authorization code grant flow.
+  schemas:
+    PageInfo:
+      type: object
+      properties:
+        pageNumber:
+          type: integer
+          format: int64
+        pageSize:
+          type: integer
+          format: int64
+        totalNumberOfRecords:
+          type: integer
+          format: int64
+        totalNumberOfPages:
+          type: integer
+          format: int64
+    UserSummary:
+      type: object
+      description: The user who created or changed the resource
+      properties:
+        id:
+          type: integer
+          format: int64
+        firstname:
+          type: string
+        lastname:
+          type: string
+        email:
+          type: string
+    Schedule:
+      type: object
+      properties:
+        cronExpression:
+          type: string
+          description: Quartz cron expression, seconds first. Used when `scheduleType` is `CRON`.
+          example: 0 0 2 * * ?
+        basicSchedule:
+          type: object
+          description: Used when `scheduleType` is `SCHEDULED`
+          properties:
+            units:
+              type: string
+              description: Run every N hours
+              enum: ['1', '2', '3', '6', '8', '12', '24']
+            timeUnit:
+              type: string
+              enum:
+                - HOURS
+    ScheduleType:
+      type: string
+      enum:
+        - MANUAL
+        - CRON
+        - SCHEDULED
+        - DATA_CHANGE
+    JobStatus:
+      type: string
+      enum:
+        - QUEUED
+        - PENDING
+        - STARTED
+        - RUNNING
+        - COMPLETED
+        - SUCCEEDED
+        - FAILED
+        - CANCELLED
+        - INCOMPLETE
+        - PRE_VALIDATION_FAILED
+        - POST_VALIDATION_FAILED
+        - DELETED
+        - UNKNOWN
+
+    # ---------- Data Sources ----------
+    DataSourceRequest:
+      type: object
+      required:
+        - name
+        - properties
+      properties:
+        name:
+          type: string
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: Unique name. Cannot be changed after creation.
+        type:
+          type: string
+          enum:
+            - SQL
+            - REST
+            - NO_SQL
+            - WAREHOUSE
+            - SFTP
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          description: Stored encrypted; never returned. Omit on update to keep the current password.
+        description:
+          type: string
+        properties:
+          type: object
+          description: Connection settings. All values are strings.
+          additionalProperties:
+            type: string
+    DataSource:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          description: Always returned in lower case
+        type:
+          type: string
+          enum:
+            - SQL
+            - REST
+            - NO_SQL
+            - WAREHOUSE
+            - SFTP
+        subType:
+          type: string
+          enum:
+            - FILE
+            - FOLDER
+        description:
+          type: string
+        username:
+          type: string
+        properties:
+          type: object
+          description: Connection settings. Secret values are masked with asterisks.
+          additionalProperties:
+            type: string
+        format:
+          type: string
+          enum:
+            - PARQUET
+            - ICEBERG
+            - CSV
+        storageType:
+          type: string
+          enum:
+            - AWS
+            - AZURE
+            - GCS
+        warehouse:
+          type: boolean
+          description: True for DataGOL-managed warehouse sources
+        caseSensitive:
+          type: boolean
+        companyId:
+          type: integer
+          format: int64
+        createdBy:
+          $ref: '#/components/schemas/UserSummary'
+        createdAt:
+          type: integer
+          format: int64
+          description: Epoch milliseconds
+        lastSyncedAt:
+          type: integer
+          format: int64
+          description: Epoch milliseconds of the last successful schema sync
+        tables:
+          type: array
+          description: Present when `includeTables=true`
+          items:
+            $ref: '#/components/schemas/DataSourceTable'
+      example:
+        id: 4521
+        name: sales_pg
+        type: SQL
+        description: Sales OLTP replica
+        username: readonly_user
+        properties:
+          dataSourceProvider: postgresql
+          host: db.example.com
+          port: '5432'
+          dbName: sales
+          schema: public
+        warehouse: false
+        caseSensitive: false
+        companyId: 7
+        createdAt: 1762675200000
+        lastSyncedAt: 1762675260000
+    DataSourceTable:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        alias:
+          type: string
+        namespace:
+          type: string
+          description: Schema the table lives in
+        qualifiedName:
+          type: string
+          description: Fully qualified name to use in SQL, e.g. `sales_pg.public.orders`
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - TABLE
+            - VIEW
+        dataSourceId:
+          type: integer
+          format: int64
+        dataSourceName:
+          type: string
+        columns:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSourceColumn'
+        files:
+          type: array
+          description: Uploaded files (file-based sources only)
+          items:
+            $ref: '#/components/schemas/DataSourceFile'
+        createDate:
+          type: integer
+          format: int64
+        modiDate:
+          type: integer
+          format: int64
+      example:
+        id: 7001
+        name: orders
+        namespace: public
+        qualifiedName: sales_pg.public.orders
+        type: TABLE
+        dataSourceId: 4521
+        dataSourceName: sales_pg
+        columns:
+          - id: 90001
+            name: amount
+            dataType: numeric
+            qualifiedName: sales_pg.public.orders.amount
+            isUniqueCol: false
+    DataSourceColumn:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        dataType:
+          type: string
+        sourceDataType:
+          type: string
+          description: Type as reported by the source database
+        qualifiedName:
+          type: string
+        description:
+          type: string
+        tableId:
+          type: integer
+          format: int64
+        datasourceId:
+          type: integer
+          format: int64
+        isUniqueCol:
+          type: boolean
+        isPartitionCol:
+          type: boolean
+    DataSourceFile:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          type: string
+        byteSize:
+          type: integer
+          format: int64
+        tableId:
+          type: integer
+          format: int64
+        datasourceId:
+          type: integer
+          format: int64
+        createDate:
+          type: integer
+          format: int64
+    DescriptionNode:
+      type: object
+      description: A node in the description tree — data source, table or column — with its children
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          type: string
+          description: Column data type (columns only)
+        description:
+          type: string
+        children:
+          type: array
+          items:
+            type: object
+            description: Nested DescriptionNode — tables under the data source, columns under a table
+    RequestStatusLog:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Request ID — poll it with `GET /noCo/api/v1/requestLog/status/{requestId}`
+        status:
+          type: string
+          enum:
+            - INITIATED
+            - IN_PROGRESS
+            - SCHEMA_COMPLETE
+            - DONE
+            - PARTIAL
+            - FAILED
+            - CANCELLED
+        eventId:
+          type: string
+        eventName:
+          type: string
+        message:
+          type: string
+        companyId:
+          type: integer
+          format: int64
+    SchemaSyncCronEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+        version:
+          type: string
+        date:
+          type: integer
+          format: int64
+        data:
+          type: object
+          properties:
+            dataSourceId:
+              type: integer
+              format: int64
+            cronExpression:
+              type: string
+            nextFireTime:
+              type: integer
+              format: int64
+              description: Epoch milliseconds
+            previousFireTime:
+              type: integer
+              format: int64
+              description: Epoch milliseconds
+    SchemaChange:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        dataSourceId:
+          type: integer
+          format: int64
+        fromSchemaId:
+          type: integer
+          format: int64
+        toSchemaId:
+          type: integer
+          format: int64
+        changes:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum:
+                  - TABLE_CREATED
+                  - TABLE_DELETED
+                  - TABLE_MODIFIED
+                  - VIEW_CREATED
+                  - VIEW_DELETED
+                  - VIEW_MODIFIED
+                  - COLUMN_CREATED
+                  - COLUMN_DELETED
+                  - COLUMN_MODIFIED
+                  - FOREIGN_KEY_CREATED
+                  - FOREIGN_KEY_DELETED
+                  - FOREIGN_KEY_MODIFIED
+              tables:
+                type: array
+                items:
+                  type: object
+              columns:
+                type: array
+                items:
+                  type: object
+              modifications:
+                type: array
+                description: Previous and current values of each modified object
+                items:
+                  type: object
+        verified:
+          type: boolean
+        verifiedBy:
+          $ref: '#/components/schemas/UserSummary'
+        createdAt:
+          type: integer
+          format: int64
+        updatedAt:
+          type: integer
+          format: int64
+
+    # ---------- Data Pipelines ----------
+    DataPipelineStream:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Keep on update so the stream is updated rather than replaced
+        name:
+          type: string
+        outputTableName:
+          type: string
+          pattern: '^[a-zA-Z0-9_]{1,128}$'
+        query:
+          type: string
+          description: SQL SELECT. Reference tables as `<dataSourceName>.<schema>.<table>`.
+        syncMode:
+          type: string
+          default: FULL_REFRESH
+          enum:
+            - FULL_REFRESH
+            - INCREMENTAL_APPEND
+            - INCREMENTAL_APPEND_V2
+            - INCREMENTAL_APPEND_MERGE
+            - INCREMENTAL_APPEND_V2_MERGE
+        uniqueColumns:
+          type: array
+          items:
+            type: string
+        cursor:
+          type: object
+          properties:
+            cursorName:
+              type: string
+            cursorDataType:
+              type: string
+            cursorLastValue:
+              type: string
+              readOnly: true
+        status:
+          type: string
+          enum:
+            - ACTIVE
+            - PAUSED
+        executionType:
+          type: string
+          default: SQL
+          enum:
+            - SQL
+            - PYTHON
+        script:
+          type: string
+        scriptParams:
+          type: object
+          additionalProperties: true
+        scriptTimeoutSeconds:
+          type: integer
+        requiredParams:
+          type: array
+          readOnly: true
+          description: Placeholders found in the query
+          items:
+            type: string
+    DataPipelineRequest:
+      type: object
+      required:
+        - name
+        - type
+        - streams
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - CUSTOM
+            - STANDARD
+            - DEDUP
+        queryEngine:
+          type: string
+          enum:
+            - SPARK
+            - ATHENA
+            - SNOWFLAKE
+            - BIGQUERY
+            - CLOUD_BIGQUERY
+            - MYSQL
+            - SQL_SERVER
+            - REDSHIFT
+            - JDBC
+        scheduleType:
+          $ref: '#/components/schemas/ScheduleType'
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        destination:
+          type: object
+          description: Data source the output is written to
+          properties:
+            id:
+              type: integer
+              format: int64
+        sources:
+          type: array
+          description: Source data sources (only for `STANDARD` and `DEDUP`; derived from the query otherwise)
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+        streams:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPipelineStream'
+        parameters:
+          type: object
+          additionalProperties: true
+        syncNow:
+          type: boolean
+          default: false
+    DataPipeline:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+          enum:
+            - CUSTOM
+            - STANDARD
+            - DEDUP
+        queryEngine:
+          type: string
+        scheduleType:
+          $ref: '#/components/schemas/ScheduleType'
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataSource'
+        destination:
+          $ref: '#/components/schemas/DataSource'
+        streams:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPipelineStream'
+        streamCount:
+          type: integer
+        parameters:
+          type: object
+          additionalProperties: true
+        companyId:
+          type: integer
+          format: int64
+        createdBy:
+          $ref: '#/components/schemas/UserSummary'
+        createdAt:
+          type: integer
+          format: int64
+        modifiedAt:
+          type: integer
+          format: int64
+        nextFireTimes:
+          type: array
+          description: Upcoming scheduled runs, epoch milliseconds
+          items:
+            type: integer
+            format: int64
+        jobs:
+          type: array
+          description: Recent runs
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+              status:
+                $ref: '#/components/schemas/JobStatus'
+              startTime:
+                type: integer
+                format: int64
+              endTime:
+                type: integer
+                format: int64
+              failureReason:
+                type: string
+      example:
+        id: 1001
+        name: daily_orders_rollup
+        description: Aggregates orders per customer
+        type: CUSTOM
+        queryEngine: SPARK
+        scheduleType: CRON
+        schedule:
+          cronExpression: 0 0 */6 ? * *
+        destination:
+          id: 4521
+          name: analytics_wh
+        streams:
+          - id: 8801
+            name: orders_by_customer
+            outputTableName: orders_by_customer
+            query: SELECT customer_id, COUNT(*) AS order_count FROM sales_pg.public.orders GROUP BY customer_id
+            syncMode: FULL_REFRESH
+            executionType: SQL
+            status: ACTIVE
+        streamCount: 1
+        companyId: 7
+        createdAt: 1762675200000
+        nextFireTimes:
+          - 1762689600000
+        jobs:
+          - id: 55501
+            status: COMPLETED
+            startTime: 1762675500000
+            endTime: 1762675620000
+    PipelineJob:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        jobGroupId:
+          type: string
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        startTime:
+          type: integer
+          format: int64
+          description: Epoch milliseconds
+        endTime:
+          type: integer
+          format: int64
+          description: Epoch milliseconds
+        startedBy:
+          $ref: '#/components/schemas/UserSummary'
+        cancelledBy:
+          $ref: '#/components/schemas/UserSummary'
+        totalStats:
+          type: string
+          description: Run statistics as a JSON string
+        streams:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+              name:
+                type: string
+              pipelineId:
+                type: integer
+                format: int64
+              jobId:
+                type: integer
+                format: int64
+              status:
+                $ref: '#/components/schemas/JobStatus'
+              totalStats:
+                type: string
+
+    # ---------- DAGs ----------
+    DagRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        scheduleType:
+          $ref: '#/components/schemas/ScheduleType'
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        metadata:
+          type: object
+          additionalProperties: true
+        defaultParameters:
+          type: object
+          description: Default parameters passed to every run
+          additionalProperties: true
+    Dag:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        companyId:
+          type: integer
+          format: int64
+        createdAt:
+          type: integer
+          format: int64
+          description: Epoch milliseconds
+        createdBy:
+          $ref: '#/components/schemas/UserSummary'
+        scheduleType:
+          $ref: '#/components/schemas/ScheduleType'
+        schedule:
+          $ref: '#/components/schemas/Schedule'
+        metadata:
+          type: object
+          additionalProperties: true
+        defaultParameters:
+          type: object
+          additionalProperties: true
+        nodes:
+          type: array
+          items:
+            $ref: '#/components/schemas/DagNode'
+        edges:
+          type: array
+          items:
+            $ref: '#/components/schemas/DagEdge'
+        latestRun:
+          $ref: '#/components/schemas/DagRun'
+    DagNodeRequest:
+      type: object
+      required:
+        - pipelineId
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Node ID — required only for the bulk update
+        pipelineId:
+          type: integer
+          format: int64
+          description: Data pipeline this node runs
+        metadata:
+          type: object
+          description: Free-form JSON, e.g. canvas position
+          additionalProperties: true
+    DagNode:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        dagId:
+          type: integer
+          format: int64
+        pipelineId:
+          type: integer
+          format: int64
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: integer
+          format: int64
+        updatedAt:
+          type: integer
+          format: int64
+    DagEdgeRequest:
+      type: object
+      required:
+        - fromNodeId
+        - toNodeId
+      properties:
+        fromNodeId:
+          type: integer
+          format: int64
+          description: Upstream node ID
+        toNodeId:
+          type: integer
+          format: int64
+          description: Downstream node ID
+        metadata:
+          type: object
+          additionalProperties: true
+    DagEdge:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        dagId:
+          type: integer
+          format: int64
+        fromNodeId:
+          type: integer
+          format: int64
+        toNodeId:
+          type: integer
+          format: int64
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: integer
+          format: int64
+    DagRunRequest:
+      type: object
+      properties:
+        parameters:
+          type: object
+          additionalProperties: true
+        startFromNodeId:
+          type: integer
+          format: int64
+        parentId:
+          type: integer
+          format: int64
+    DagRun:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        dagId:
+          type: integer
+          format: int64
+        status:
+          $ref: '#/components/schemas/JobStatus'
+        type:
+          $ref: '#/components/schemas/ScheduleType'
+        startTime:
+          type: integer
+          format: int64
+        endTime:
+          type: integer
+          format: int64
+        createdBy:
+          $ref: '#/components/schemas/UserSummary'
+        parameters:
+          type: object
+          additionalProperties: true
+        dagSnapshotId:
+          type: integer
+          format: int64
+          description: Graph snapshot this run executed — see **Get DAG Snapshot**
+        startFromNodeId:
+          type: integer
+          format: int64
+        parentId:
+          type: integer
+          format: int64
+          description: The run this run retries
+        jobMappings:
+          type: array
+          description: One entry per node, in execution order
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                format: int64
+              dagRunId:
+                type: integer
+                format: int64
+              dagNodeId:
+                type: integer
+                format: int64
+              jobId:
+                type: integer
+                format: int64
+                description: Pipeline job ID, set once the node starts
+              executionOrder:
+                type: integer
+              status:
+                type: string
+                enum:
+                  - NOT_EXECUTED
+                  - PENDING
+                  - IN_PROGRESS
+                  - COMPLETED
+                  - FAILED
+                  - CANCELLED
+              job:
+                $ref: '#/components/schemas/PipelineJob'
 tags:
   - name: Links & Joins
     description: |
@@ -115,6 +1020,53 @@ tags:
       > - With multiple links to the same associated table, each LOOKUP must bind to the correct `linkColumnId`
       > - Always treat the associated row ID as the associated table PK for linking UI selection
 
+  - name: Data Sources
+    description: |
+      ## 🔌 Data Sources
+
+      A data source is a connection to an external database (PostgreSQL, MySQL, Snowflake, BigQuery, ...), a SaaS application, or a DataGOL-managed warehouse. Once connected, DataGOL syncs its schema — tables and columns — so you can query it, describe it for AI, and use it in data pipelines.
+
+      | Step | Endpoint |
+      |---|---|
+      | 1. Connect | `POST /dataSources/api/v1/dataSources` |
+      | 2. Wait for the schema sync | `GET /dataSources/api/v1/{dataSourceId}/getSyncSchemaStatus` |
+      | 3. Browse tables | `GET /dataSources/api/v1/dataSources/{dataSourceId}/tables` |
+      | 4. Re-sync after source changes | `GET /dataSources/api/v1/dataSources/{dataSourceId}/syncSchema` |
+
+      > In SQL, reference a table as `<dataSourceName>.<schema>.<table>` — the table's `qualifiedName`.
+
+      Secrets are never returned: `password` is write-only and secret `properties` come back masked.
+  - name: Data Pipelines
+    description: |
+      ## 🚰 Data Pipelines
+
+      A data pipeline reads from one or more data sources, transforms the data with SQL (or Python), and writes each **stream** to an output table in a destination data source.
+
+      | Step | Endpoint |
+      |---|---|
+      | 1. Create | `POST /dataPipeline/api/v2` |
+      | 2. Run | `POST /dataPipeline/api/v1/{pipelineId}/run` |
+      | 3. Poll the job | `GET /dataPipeline/api/v2/{pipelineId}/job/{jobId}` |
+      | 4. On failure, read the error | `GET /dataPipeline/api/v1/{pipelineId}/job/{jobId}/errorLog` |
+
+      Pipelines can also run on a schedule (`CRON` / `SCHEDULED`) or as nodes in a DAG.
+
+      > Pipelines are created, read and updated under `/dataPipeline/api/v2`; run, cancel and delete are under `/dataPipeline/api/v1`.
+  - name: DAGs
+    description: |
+      ## 🔀 DAGs (Orchestration)
+
+      A DAG runs several data pipelines in dependency order. Each **node** is a pipeline; each **edge** says the downstream node waits for the upstream one. Cycles are rejected.
+
+      | Step | Endpoint |
+      |---|---|
+      | 1. Create the DAG | `POST /orchestration/api/v1/dags` |
+      | 2. Add pipelines as nodes | `POST /orchestration/api/v1/dags/{dagId}/nodes` |
+      | 3. Connect nodes | `POST /orchestration/api/v1/dags/{dagId}/edges` |
+      | 4. Run it | `POST /orchestration/api/v1/dags/{dagId}/runs` |
+      | 5. Track the run | `GET /orchestration/api/v1/dags/{dagId}/runs/{runId}` |
+
+      A run executes one node at a time in topological order. If a node fails, retry from it with `startFromNodeId`.
 paths:
   /idp/api/v1/user/token:
     post:
@@ -217,9 +1169,9 @@ paths:
         ,\n  \"description\": \"string\"\n}\n\n ```\n\n---\n\n## 6\uFE0F\u20E3 Field\
         \ Descriptions\n\n### Service Account Fields\n\n| Field | Type | Required\
         \ | Description |\n| --- | --- | --- | --- |\n| name | string | \u2705 Yes\
-        \ | The unique identifier or display name for the service account with no\
-        \ spaces or special characters. |\n| description | string | \u274C No | A\
-        \ brief explanation of the account's purpose (can be an empty string). |\n\
+        \ | Unique account name. No spaces or special characters.\
+        \ |\n| description | string | \u274C No | Purpose of the account. May be\
+        \ empty. |\n\
         \n---\n\n## 7\uFE0F\u20E3 Example Request\n\n``` bash\ncurl -X POST https://be.datagol.ai/idp/api/v1/company/serviceAccount\
         \ \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"\
         \ \\\n-d '{\n  \"name\": \"ci_cd_service_account\",\n  \"description\": \"\
@@ -337,7 +1289,7 @@ paths:
       summary: User Sign Up
       tags:
         - Sign up
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nRegisters a new user account. Supports two sign-up flows:\n\n- **Self Registration** — User registers independently. No hash required. An OTP is sent to the email for verification.\n\n- **Workspace Invitation** — User was invited to a workspace via email. The invitation `hash` (received in the invitation email) must be provided along with name and password.\n\n---\n\n## 2️⃣ Endpoint\n\n``` bash\nPOST /idp/api/v1/user/sign-up\n```\n\n---\n\n## 3️⃣ Authentication\n\nNo authentication required. This is a public endpoint.\n\n---\n\n## 4️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 5️⃣ Request Body Schema\n\n``` json\n{\n  \"email\": \"string\",\n  \"password\": \"string\",\n  \"firstname\": \"string\",\n  \"lastname\": \"string\",\n  \"hash\": \"string\"\n}\n```\n\n---\n\n## 6️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| email | string | ✅ Yes | User's email address |\n| password | string | ✅ Yes | Min 8 chars, must include uppercase, lowercase, number, and special character |\n| firstname | string | ✅ Yes | User's first name |\n| lastname | string | ✅ Yes | User's last name |\n| hash | string | ⚠️ Conditional | Required only for workspace invitation flow. UUID received in the invitation email. Must be omitted for self-registration. |\n\n---\n\n## 7️⃣ Sign-Up Flows\n\n### 🔵 Self Registration\n\n```json\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\"\n}\n```\n\n- No `hash` required\n- OTP is sent to the provided email\n- User must verify email via `/idp/api/v1/user/signUp/verifyEmailOtp`\n\n### 🟢 Workspace Invitation\n\n```json\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\",\n  \"hash\": \"e0754cfc-f7d1-4cc3-8690-e34a2f17291d\"\n}\n```\n\n- `hash` is mandatory and must match the one received in the invitation email\n- User is directly linked to the inviting workspace upon successful registration\n\n---\n\n## 8️⃣ Behavior Summary\n\n```\n• Self Registration — OTP is dispatched to the email. Account is pending until OTP is verified.\n• Workspace Invitation — Hash is validated against the invitation. Account is activated and linked to the workspace.\n• Password Policy — Enforced for both flows.\n```\n\n---\n\n## 📌 Additional Notes\n\n- For self-registration, the OTP verification step is mandatory to activate the account.\n- For workspace invitation, the `hash` is single-use and time-limited.\n- `firstname` and `lastname` are required for both flows."
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nRegisters a new user account. Supports two sign-up flows:\n\n- **Self Registration** — User registers independently. No hash required. An OTP is sent to the email for verification.\n\n- **Workspace Invitation** — User was invited to a workspace via email. The invitation `hash` (received in the invitation email) must be provided along with name and password.\n\n---\n\n## 2️⃣ Endpoint\n\n``` bash\nPOST /idp/api/v1/user/sign-up\n```\n\n---\n\n## 3️⃣ Authentication\n\nNo authentication required. This is a public endpoint.\n\n---\n\n## 4️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 5️⃣ Request Body Schema\n\n``` json\n{\n  \"email\": \"string\",\n  \"password\": \"string\",\n  \"firstname\": \"string\",\n  \"lastname\": \"string\",\n  \"hash\": \"string\"\n}\n```\n\n---\n\n## 6️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| email | string | ✅ Yes | User's email address |\n| password | string | ✅ Yes | Must meet the password policy (see notes) |\n| firstname | string | ✅ Yes | User's first name |\n| lastname | string | ✅ Yes | User's last name |\n| hash | string | ⚠️ Conditional | Invitation UUID. Invitation flow only. |\n\n**Notes**\n\n- **password** — Min 8 chars, with at least one uppercase letter, lowercase letter, number and special character.\n- **hash** — The UUID from the invitation email. Required for the workspace invitation flow; must be omitted for self-registration.\n\n---\n\n## 7️⃣ Sign-Up Flows\n\n### 🔵 Self Registration\n\n```json\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\"\n}\n```\n\n- No `hash` required\n- OTP is sent to the provided email\n- User must verify email via `/idp/api/v1/user/signUp/verifyEmailOtp`\n\n### 🟢 Workspace Invitation\n\n```json\n{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"firstname\": \"John\",\n  \"lastname\": \"Doe\",\n  \"hash\": \"e0754cfc-f7d1-4cc3-8690-e34a2f17291d\"\n}\n```\n\n- `hash` is mandatory and must match the one received in the invitation email\n- User is directly linked to the inviting workspace upon successful registration\n\n---\n\n## 8️⃣ Behavior Summary\n\n```\n• Self Registration — OTP is dispatched to the email. Account is pending until OTP is verified.\n• Workspace Invitation — Hash is validated against the invitation. Account is activated and linked to the workspace.\n• Password Policy — Enforced for both flows.\n```\n\n---\n\n## 📌 Additional Notes\n\n- For self-registration, the OTP verification step is mandatory to activate the account.\n- For workspace invitation, the `hash` is single-use and time-limited.\n- `firstname` and `lastname` are required for both flows."
       requestBody:
         required: true
         content:
@@ -1422,8 +2374,8 @@ paths:
         | Authorization | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```
         json\n{\n  \"cellValues\": {}\n}\n\n ```\n\n---\n\n## 7️⃣
         Field Descriptions\n\n### Row Data\n\n| Field | Type | Required | Description
-        |\n| --- | --- | --- | --- |\n| cellValues | object | ✅ Yes | Key-value
-        mapping of workbook column internal names to their values |\n\n---\n\n##
+        |\n| --- | --- | --- | --- |\n| cellValues | object | ✅ Yes | Map of column
+        internal name to value |\n\n---\n\n##
         8️⃣ Example Request\n\n``` bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/rows
         \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"
         \\\n-d '{\n  \"cellValues\": {\n    \"first_name\": \"John\",\n    \"years_of_experience\":
@@ -1580,7 +2532,7 @@ paths:
         6️⃣ Request Body Schema\n\n``` json\n[\n  {\n    \"cellValues\": {}\n  }\n]\n\n
   ``````\n\n---\n\n## 7️⃣ Field Descriptions\n\n### Bulk Row Data\n\n| Field | Type
         | Required | Description |\n| --- | --- | --- | --- |\n| cellValues | object
-        | ✅ Yes | Key-value mapping of workbook column internal names to their values
+        | ✅ Yes | Map of column internal name to value
         |\n\n---\n\n## 8️⃣ Example Request\n\n``` bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/rows/bulk
         \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\"
         \\\n--data-raw '[{\"cellValues\":{\"first_name\":\"John\",\"years_of_experience\":5,\"is_active\":true,\"start_date\":\"2024-02-18T05:00:00+00:00\"}},{\"cellValues\":{\"first_name\":\"Jane\",\"years_of_experience\":3,\"is_active\":false,\"start_date\":\"2023-06-01T05:00:00+00:00\"}}]'\n\n
@@ -2002,7 +2954,7 @@ paths:
         - Links & Joins
       security:
         - bearerAuth: [ ]
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column in a table, establishing a bidirectional relationship between a parent table and a child/associated table.\n\nThis endpoint supports:\n- Creating HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n- Automatically creating a reciprocal link column in the associated table\n\n> ⚠️ **Note:** Links are bidirectional. When a link is created from the parent with relation type `HAS_MANY`, a corresponding column with relation type `BELONGS_TO` is automatically created in the child table.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"uuid\",\n    \"associateWorkspaceId\": \"uuid\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\"\n  },\n  \"settings\": {},\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions.relationType | string | ✅ Yes | Relation type: `HAS_MANY`, `ONE_TO_ONE`, or `MANY_TO_MANY` |\n| colOptions.associateTableId | UUID | ✅ Yes | The child or linked table ID |\n| colOptions.associateWorkspaceId | UUID | ✅ Yes | The workspace ID of the child (associated) table |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| name | string | ✅ Yes | Internal column name — must be unique within the table |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"6a175502-6458-4314-b4c5-3c2f29626dea\",\n    \"associateWorkspaceId\": \"b3e1a902-1234-4abc-9def-7f8a90bc1234\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"people\"\n  },\n  \"name\": \"people\"\n}'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nCreates a LINK column in the source table.\nSupports:\n• HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n• Bidirectional — a BELONGS_TO column is auto-created in the child table\n• Column name must be unique within the table\n• Returns the full column object including colOptions with resolved IDs\n```"
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column in a table, establishing a bidirectional relationship between a parent table and a child/associated table.\n\nThis endpoint supports:\n- Creating HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n- Automatically creating a reciprocal link column in the associated table\n\n> ⚠️ **Note:** Links are bidirectional. When a link is created from the parent with relation type `HAS_MANY`, a corresponding column with relation type `BELONGS_TO` is automatically created in the child table.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"uuid\",\n    \"associateWorkspaceId\": \"uuid\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\"\n  },\n  \"settings\": {},\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions | object | ✅ Yes | Link settings (see below) |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| name | string | ✅ Yes | Internal column name, unique within the table |\n\n### colOptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| relationType | string | ✅ Yes | `HAS_MANY`, `ONE_TO_ONE` or `MANY_TO_MANY` |\n| associateTableId | UUID | ✅ Yes | Linked (child) table ID |\n| associateWorkspaceId | UUID | ✅ Yes | Workspace of the linked table |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"relationType\": \"HAS_MANY\",\n    \"associateTableId\": \"6a175502-6458-4314-b4c5-3c2f29626dea\",\n    \"associateWorkspaceId\": \"b3e1a902-1234-4abc-9def-7f8a90bc1234\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"people\"\n  },\n  \"name\": \"people\"\n}'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nCreates a LINK column in the source table.\nSupports:\n• HAS_MANY, ONE_TO_ONE, and MANY_TO_MANY relation types\n• Bidirectional — a BELONGS_TO column is auto-created in the child table\n• Column name must be unique within the table\n• Returns the full column object including colOptions with resolved IDs\n```"
       parameters:
         - name: workspaceId
           in: path
@@ -2154,7 +3106,7 @@ paths:
         - Links & Joins
       security:
         - bearerAuth: [ ]
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column with an automatic join condition between the parent and child tables. Unlike a manual link, this allows defining column-level join conditions that filter how records are linked.\n\nThis endpoint supports:\n- Defining join conditions between columns of two tables\n- Using operators like `EQUALS` for condition matching\n- Passing a raw SQL-style `whereClause` and `formula` for backend filtering\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"associateTableId\": \"uuid\",\n    \"associateWorkspaceId\": \"uuid\",\n    \"whereClause\": \"string\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\",\n    \"autoJoinConfig\": {\n      \"joinConditions\": [\n        {\n          \"id\": \"string\",\n          \"currentTableColumn\": \"string\",\n          \"linkedTableColumn\": \"string\",\n          \"operator\": \"EQUALS\"\n        }\n      ],\n      \"isSwapped\": false\n    }\n  },\n   \"formula\": \"string\",\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions.associateTableId | UUID | ✅ Yes | The child or linked table ID |\n| colOptions.associateWorkspaceId | UUID | ✅ Yes | The workspace ID of the child (associated) table |\n| colOptions.whereClause | string | ✅ Yes | Raw SQL-style condition used for backend join filtering |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| uiMetadata.autoJoinConfig | object | ✅ Yes | Configuration object defining the auto join conditions |\n| uiMetadata.autoJoinConfig.joinConditions | array | ✅ Yes | List of join condition objects |\n| uiMetadata.autoJoinConfig.joinConditions[].id | string | ✅ Yes | Unique identifier for the condition (client-generated) |\n| uiMetadata.autoJoinConfig.joinConditions[].currentTableColumn | string | ✅ Yes | Column name from the current (source) table to join on |\n| uiMetadata.autoJoinConfig.joinConditions[].linkedTableColumn | string | ✅ Yes | Column name from the linked (destination) table to join on |\n| uiMetadata.autoJoinConfig.joinConditions[].operator | string | ✅ Yes | Join operator — currently supports `EQUALS` |\n| uiMetadata.autoJoinConfig.isSwapped | boolean | ❌ No | Whether the join direction is swapped. Defaults to `false`  |\n| formula | string | ✅ Yes | Raw SQL-style formula matching the whereClause, used for backend processing |\n| name | string | ✅ Yes | Internal column name — must be unique within the table |"
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new LINK type column with an automatic join condition between the parent and child tables. Unlike a manual link, this allows defining column-level join conditions that filter how records are linked.\n\nThis endpoint supports:\n- Defining join conditions between columns of two tables\n- Using operators like `EQUALS` for condition matching\n- Passing a raw SQL-style `whereClause` and `formula` for backend filtering\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/column\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Source (parent) table identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"uiDataType\": \"LINK\",\n  \"colOptions\": {\n    \"associateTableId\": \"uuid\",\n    \"associateWorkspaceId\": \"uuid\",\n    \"whereClause\": \"string\"\n  },\n  \"uiMetadata\": {\n    \"title\": \"string\",\n    \"autoJoinConfig\": {\n      \"joinConditions\": [\n        {\n          \"id\": \"string\",\n          \"currentTableColumn\": \"string\",\n          \"linkedTableColumn\": \"string\",\n          \"operator\": \"EQUALS\"\n        }\n      ],\n      \"isSwapped\": false\n    }\n  },\n   \"formula\": \"string\",\n  \"name\": \"string\"\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LINK` |\n| colOptions | object | ✅ Yes | Link settings (see below) |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| uiMetadata.autoJoinConfig | object | ✅ Yes | Auto join settings (see below) |\n| formula | string | ✅ Yes | SQL-style formula matching `whereClause` |\n| name | string | ✅ Yes | Internal column name, unique within the table |\n\n### colOptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| associateTableId | UUID | ✅ Yes | Linked (child) table ID |\n| associateWorkspaceId | UUID | ✅ Yes | Workspace of the linked table |\n| whereClause | string | ✅ Yes | SQL-style join condition |\n\n### uiMetadata.autoJoinConfig\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| joinConditions | array | ✅ Yes | Join conditions (see below) |\n| isSwapped | boolean | ❌ No | Swap the join direction. Default `false`. |\n\n### joinConditions[] items\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| id | string | ✅ Yes | Client-generated condition ID |\n| currentTableColumn | string | ✅ Yes | Column in the current (source) table |\n| linkedTableColumn | string | ✅ Yes | Column in the linked table |\n| operator | string | ✅ Yes | Only `EQUALS` is supported |"
       parameters:
         - name: workspaceId
           in: path
@@ -2397,7 +3349,7 @@ paths:
         - Links & Joins
       security:
         - bearerAuth: []
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nAdds one or more LOOKUP type columns to a specified table. A lookup column pulls field values from a linked (associated) table via an existing LINK column.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/columns\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Table identifier where the lookup column will be created |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"columns\": [\n    {\n      \"description\": \"string\",\n      \"uiMetadata\": {\n        \"title\": \"string\"\n      },\n      \"uiDataType\": \"LOOKUP\",\n      \"colOptions\": {\n        \"linkColumnId\": \"uuid\",\n        \"lookupColumnId\": \"uuid\"\n      },\n      \"name\": \"string\"\n    }\n  ]\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| columns | array | ✅ Yes | Array of lookup column definitions to create |\n| columns[].description | string | ❌ No | Optional description of the column |\n| columns[].uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| columns[].uiDataType | string | ✅ Yes | Must be `LOOKUP` |\n| columns[].colOptions.linkColumnId | UUID | ✅ Yes | ID of the existing LINK column connecting to the source table |\n| columns[].colOptions.lookupColumnId | UUID | ✅ Yes | ID of the column in the linked table whose values should be looked up |\n| columns[].name | string | ✅ Yes | Internal column name — must be unique within the table |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/columns \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"columns\": [\n    {\n      \"description\": \"\",\n      \"uiMetadata\": {\n        \"title\": \"Name (from People)\"\n      },\n      \"uiDataType\": \"LOOKUP\",\n      \"colOptions\": {\n        \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\",\n        \"lookupColumnId\": \"9b5e408d-69bb-42ca-8fa4-ba00f7994356\"\n      },\n      \"name\": \"name_1774285509977\"\n    }\n  ]\n}'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nCreates one or more LOOKUP columns in the target table.\nSupports:\n• Batch creation of multiple lookup columns in one request\n• linkColumnId — references the existing LINK column in the current table\n• lookupColumnId — references the column from the linked table to display\n• Column name must be unique within the table\n```"
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nAdds one or more LOOKUP type columns to a specified table. A lookup column pulls field values from a linked (associated) table via an existing LINK column.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/columns\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| tableId | UUID | ✅ Yes | Table identifier where the lookup column will be created |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"columns\": [\n    {\n      \"description\": \"string\",\n      \"uiMetadata\": {\n        \"title\": \"string\"\n      },\n      \"uiDataType\": \"LOOKUP\",\n      \"colOptions\": {\n        \"linkColumnId\": \"uuid\",\n        \"lookupColumnId\": \"uuid\"\n      },\n      \"name\": \"string\"\n    }\n  ]\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| columns | array | ✅ Yes | Lookup columns to create (see below) |\n\n### columns[] items\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| uiDataType | string | ✅ Yes | Must be `LOOKUP` |\n| uiMetadata.title | string | ✅ Yes | Display name shown in the UI |\n| colOptions.linkColumnId | UUID | ✅ Yes | Existing LINK column in this table |\n| colOptions.lookupColumnId | UUID | ✅ Yes | Column in the linked table to show |\n| name | string | ✅ Yes | Internal column name, unique within the table |\n| description | string | ❌ No | Column description |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{tableId}/columns \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '{\n  \"columns\": [\n    {\n      \"description\": \"\",\n      \"uiMetadata\": {\n        \"title\": \"Name (from People)\"\n      },\n      \"uiDataType\": \"LOOKUP\",\n      \"colOptions\": {\n        \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\",\n        \"lookupColumnId\": \"9b5e408d-69bb-42ca-8fa4-ba00f7994356\"\n      },\n      \"name\": \"name_1774285509977\"\n    }\n  ]\n}'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nCreates one or more LOOKUP columns in the target table.\nSupports:\n• Batch creation of multiple lookup columns in one request\n• linkColumnId — references the existing LINK column in the current table\n• lookupColumnId — references the column from the linked table to display\n• Column name must be unique within the table\n```"
       parameters:
         - name: workspaceId
           in: path
@@ -2478,7 +3430,7 @@ paths:
         - Links & Joins
       security:
         - bearerAuth: [ ]
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new row in the specified table and simultaneously links it to one or more records in associated tables via existing LINK columns.\n\nThis endpoint supports:\n- Setting cell values for the new row at creation time\n- Linking the new row to existing records in associated tables using `linkColumnId`\n- Multiple link relations can be established in a single request\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{workbook_id}/rows\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| workbook_id | UUID | ✅ Yes |  workbook where the row will be created |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"cellValues\": {\n    \"<columnName>\": \"<value>\"\n  },\n  \"linkRecords\": [\n    {\n      \"destinationRecordId\": \"integer\",\n      \"linkColumnId\": \"uuid\"\n    }\n  ]\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| cellValues | object | ✅ Yes | Key-value map of column names and their values for the new row |\n| cellValues.\\<columnName\\> | any | ❌ No | Value for a specific column — pass empty string or empty array if no value |\n| linkRecords | array | ❌ No | List of link operations to perform when creating the row |\n| linkRecords[].destinationRecordId | integer | ✅ Yes | PK of the record in the associated table to link to |\n| linkRecords[].linkColumnId | UUID | ✅ Yes | ID of the LINK column that defines the relation |"
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nCreates a new row in the specified table and simultaneously links it to one or more records in associated tables via existing LINK columns.\n\nThis endpoint supports:\n- Setting cell values for the new row at creation time\n- Linking the new row to existing records in associated tables using `linkColumnId`\n- Multiple link relations can be established in a single request\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{workbook_id}/rows\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| workbook_id | UUID | ✅ Yes |  workbook where the row will be created |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n{\n  \"cellValues\": {\n    \"<columnName>\": \"<value>\"\n  },\n  \"linkRecords\": [\n    {\n      \"destinationRecordId\": \"integer\",\n      \"linkColumnId\": \"uuid\"\n    }\n  ]\n}\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| cellValues | object | ✅ Yes | Column name → value for the new row |\n| cellValues.\\<columnName\\> | any | ❌ No | Column value. Use `\"\"` or `[]` for empty. |\n| linkRecords | array | ❌ No | Records to link (see below) |\n\n### linkRecords[] items\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| destinationRecordId | integer | ✅ Yes | Row ID in the linked table |\n| linkColumnId | UUID | ✅ Yes | LINK column that defines the relation |"
       parameters:
         - name: workspaceId
           in: path
@@ -2762,7 +3714,7 @@ paths:
         - Links & Joins
       security:
         - bearerAuth: [ ]
-      description: "## 1️⃣ Overview\n\n**Purpose:**\nLinks one or more records from a source table to records in a destination table via a LINK column. Supports batch linking of multiple record pairs in a single request.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/linkRecordV2\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| workbookId | UUID | ✅ Yes | Workbook identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n[\n  {\n    \"sourceRecordId\": integer,\n    \"destinationRecordId\": integer,\n      \"linkColumnId\": \"uuid\"\n  }\n]\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| sourceRecordId | integer | ✅ Yes | The row ID of the source record in the current table that you want to link to the destination record. |\n| destinationRecordId | integer | ✅ Yes | The row ID of the destination record in the linked table that you want to link to the source record. |\n|  linkColumnId | UUID | ✅ Yes | ID of the LINK type column in the current table, or the link dataType columnId for a LookUp column |\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/linkRecordV2 \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '[\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 1,\n    \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  },\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 2,\n     \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  }\n]'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nLinks records between two tables via a LINK column.\nSupports:\n• Batch linking multiple record pairs in one request\n• sourceRecordId — PK of the record in the current table\n• destinationRecordId — PK of the record in the destination table\n•  linkColumnId — the LINK column ID or link dataType columnId for LookUp\n```"
+      description: "## 1️⃣ Overview\n\n**Purpose:**\nLinks one or more records from a source table to records in a destination table via a LINK column. Supports batch linking of multiple record pairs in a single request.\n\n---\n\n## 2️⃣ Endpoint\n\n```\nPOST /noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/linkRecordV2\n```\n\n---\n\n## 3️⃣ Path Parameters\n\n| Parameter | Type | Required | Description |\n| --- | --- | --- | --- |\n| workspaceId | UUID | ✅ Yes | Workspace identifier |\n| workbookId | UUID | ✅ Yes | Workbook identifier |\n\n---\n\n## 4️⃣ Authentication\n\nRequires **Bearer JWT Token**\n\n```\nAuthorization: Bearer <token>\n```\n\n---\n\n## 5️⃣ Request Headers\n\n| Header | Required |\n| --- | --- |\n| Authorization | ✅ Yes |\n| Content-Type: application/json | ✅ Yes |\n\n---\n\n## 6️⃣ Request Body Schema\n\n```json\n[\n  {\n    \"sourceRecordId\": integer,\n    \"destinationRecordId\": integer,\n      \"linkColumnId\": \"uuid\"\n  }\n]\n```\n\n---\n\n## 7️⃣ Field Descriptions\n\n| Field | Type | Required | Description |\n| --- | --- | --- | --- |\n| sourceRecordId | integer | ✅ Yes | Row ID in the current table |\n| destinationRecordId | integer | ✅ Yes | Row ID in the linked table |\n| linkColumnId | UUID | ✅ Yes | LINK column ID (see note) |\n\n> **linkColumnId** — The LINK column in the current table. For a LOOKUP column, use the ID of the LINK column it is based on.\n\n---\n\n## 8️⃣ Example Request\n\n```bash\ncurl -X POST https://be.datagol.ai/noCo/api/v2/workspaces/{workspaceId}/tables/{workbookId}/linkRecordV2 \\\n-H \"Authorization: Bearer <token>\" \\\n-H \"Content-Type: application/json\" \\\n-d '[\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 1,\n    \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  },\n  {\n    \"sourceRecordId\": 1,\n    \"destinationRecordId\": 2,\n     \"linkColumnId\": \"21224153-2f85-4b24-a306-4cfbc7e73f70\"\n  }\n]'\n```\n\n---\n\n## 9️⃣ Behavior Summary\n\n```\nLinks records between two tables via a LINK column.\nSupports:\n• Batch linking multiple record pairs in one request\n• sourceRecordId — PK of the record in the current table\n• destinationRecordId — PK of the record in the destination table\n•  linkColumnId — the LINK column ID or link dataType columnId for LookUp\n```"
       parameters:
         - name: workspaceId
           in: path
@@ -3547,3 +4499,4522 @@ paths:
         \ of the enterprise search connector for the specified workspace.\nTypically\
         \ used to poll the status after triggering a re-index via the Re-index Workspace\
         \ Files endpoint.\n\n ```"
+  /dataSources/api/v1/dataSources:
+    post:
+      summary: Create Data Source
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceRequest'
+            examples:
+              postgres:
+                summary: PostgreSQL
+                value:
+                  name: sales_pg
+                  type: SQL
+                  username: readonly_user
+                  password: <password>
+                  description: Sales OLTP replica
+                  properties:
+                    dataSourceProvider: postgresql
+                    host: db.example.com
+                    port: '5432'
+                    dbName: sales
+                    schema: public
+              mysql:
+                summary: MySQL
+                value:
+                  name: crm_mysql
+                  type: SQL
+                  username: readonly_user
+                  password: <password>
+                  properties:
+                    dataSourceProvider: mysql
+                    host: mysql.example.com
+                    port: '3306'
+                    dbName: crm
+                    schemaAutoSyncEnabled: 'true'
+      responses:
+        '200':
+          description: The created data source (credentials masked)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSource'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Connects a database or SaaS application to DataGOL. Once created, its tables can be queried, used as pipeline sources, or used as a pipeline destination.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataSources/api/v1/dataSources
+        ```
+
+        ---
+
+        ## 3️⃣ Authentication
+
+        ``` bash
+        Authorization: Bearer <token>
+        ```
+
+        ---
+
+        ## 4️⃣ Required Permissions
+
+        Lakehouse member. You become the owner of the new data source.
+
+        ---
+
+        ## 5️⃣ Field Descriptions
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | name | string | ✅ Yes | Unique data source name (see notes below) |
+        | type | enum | ❌ No | Data source category (see notes below) |
+        | username | string | ⚠️ Conditional | Database user. Required for database sources. |
+        | password | string | ⚠️ Conditional | Database password. Required for database sources. |
+        | description | string | ❌ No | Free-text description |
+        | properties | object | ✅ Yes | Connection settings. All values are strings. |
+
+        **Notes**
+
+        - **name** — Letters, digits and `_` only. Cannot be changed later. Tables are referenced in SQL as `<name>.<schema>.<table>`.
+        - **type** — One of `SQL`, `REST`, `NO_SQL`, `WAREHOUSE`, `SFTP`. Inferred from `properties.dataSourceProvider` when omitted.
+        - **password** — Stored encrypted and never returned in responses.
+
+        ### Common `properties` for databases
+
+        | Key | Description |
+        | --- | --- |
+        | dataSourceProvider | `postgresql`, `mysql`, `sqlserver`, `snowflake`, `redshift`, `bigquery`, `databricks`, `db2`, `sap_hana`, `supabase`, `mongodb`, `mongodb_atlas` |
+        | host | Hostname |
+        | port | Port, as a string |
+        | dbName | Database name |
+        | schema | Default schema (PostgreSQL, SQL Server) |
+        | additionalProperties | JSON string of extra JDBC options, e.g. `"{\"sslMode\":\"REQUIRED\"}"` |
+
+        ---
+
+        ## 6️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataSources/api/v1/dataSources' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "name": "sales_pg",
+          "type": "SQL",
+          "username": "readonly_user",
+          "password": "<password>",
+          "properties": {
+            "dataSourceProvider": "postgresql",
+            "host": "db.example.com",
+            "port": "5432",
+            "dbName": "sales",
+            "schema": "public"
+          }
+        }'
+        ```
+
+        ---
+
+        ## 7️⃣ Behavior Summary
+
+        ```
+        1. Validate the name (format, uniqueness)
+        2. For SQL sources, test the connection — the request fails if DataGOL cannot connect
+        3. Save the data source with the password encrypted
+        4. Start a schema sync in the background to discover tables and columns
+        Secret values in the response are masked with asterisks.
+        ```
+    get:
+      summary: List Data Sources
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: includeTables
+          in: query
+          required: false
+          description: Include each source's tables
+          schema:
+            type: boolean
+            default: false
+        - name: includeFunctions
+          in: query
+          required: false
+          description: Include each source's database functions
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Data sources you can access
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DataSource'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Lists the data sources you can access.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources
+        ```
+
+        ---
+
+        ## 3️⃣ Query Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | includeTables | boolean | ❌ No | Include tables (default `false`) |
+        | includeFunctions | boolean | ❌ No | Include database functions (default `false`) |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 5️⃣ Behavior Summary
+
+        ```
+        Returns { "results": [ DataSource, ... ] } with secrets masked.
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}:
+    parameters:
+      - name: dataSourceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 4521
+    get:
+      summary: Get Data Source
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: includeTables
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: includeSchema
+          in: query
+          required: false
+          description: Include the latest schema snapshot in `schemaInfo`
+          schema:
+            type: boolean
+            default: false
+        - name: includeFunctions
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: The data source (credentials masked)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSource'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Retrieves one data source, optionally with its tables, functions and latest schema snapshot.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}?includeTables=true
+        ```
+
+        ---
+
+        ## 3️⃣ Query Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | includeTables | boolean | ❌ No | Include tables and their columns |
+        | includeSchema | boolean | ❌ No | Include the latest schema snapshot |
+        | includeFunctions | boolean | ❌ No | Include database functions |
+
+        ---
+
+        ## 4️⃣ Required Permissions
+
+        View access to the data source.
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521?includeTables=true' \
+        -H "Authorization: Bearer <token>"
+        ```
+    put:
+      summary: Update Data Source
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceRequest'
+            example:
+              name: sales_pg
+              type: SQL
+              username: readonly_user
+              description: Sales OLTP replica (read replica 2)
+              properties:
+                dataSourceProvider: postgresql
+                host: db-replica-2.example.com
+                port: '5432'
+                dbName: sales
+                schema: public
+      responses:
+        '200':
+          description: The updated data source with its tables
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSource'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Updates a data source's connection settings, credentials or description.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /dataSources/api/v1/dataSources/{dataSourceId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Request Body
+
+        Same fields as **Create Data Source**, with these rules:
+
+        | Field | Rule |
+        | --- | --- |
+        | name | Must stay the same — renaming is not allowed |
+        | password | Omit to keep the current password |
+        | properties | Replaced as a whole — send every key, with real values for secrets (not the masked `****` values from a GET) |
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "name": "sales_pg",
+          "username": "readonly_user",
+          "properties": {
+            "dataSourceProvider": "postgresql",
+            "host": "db-replica-2.example.com",
+            "port": "5432",
+            "dbName": "sales",
+            "schema": "public"
+          }
+        }'
+        ```
+
+        ---
+
+        ## 6️⃣ Behavior Summary
+
+        ```
+        For SQL sources the connection is re-tested and the schema re-synced.
+        ```
+    delete:
+      summary: Delete Data Source
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: Deleted (empty body)
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Deletes a data source with its tables and columns.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        DELETE /dataSources/api/v1/dataSources/{dataSourceId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Delete access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X DELETE 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 5️⃣ Errors
+
+        | Status | When |
+        | --- | --- |
+        | 400 | A data pipeline still uses the data source — delete or change those pipelines first |
+  /dataSources/api/v1/dataSources/{dataSourceId}/tables:
+    parameters:
+      - name: dataSourceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 4521
+    get:
+      summary: List Data Source Tables
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: Tables in the data source
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DataSourceTable'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Lists the tables and views discovered in the data source, with their columns.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/tables
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables' \
+        -H "Authorization: Bearer <token>"
+        ```
+    post:
+      summary: Add Data Source Table
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceTable'
+            example:
+              name: uploads_2026
+              description: Monthly CSV uploads
+      responses:
+        '200':
+          description: The created table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceTable'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Adds a table to a file-based data source (for example a folder of uploaded files). Upload files into it with **Upload Table Files**.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataSources/api/v1/dataSources/{dataSourceId}/tables
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "name": "uploads_2026" }'
+        ```
+    delete:
+      summary: Delete Data Source Tables (bulk)
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - dataSourceTableIds
+              properties:
+                dataSourceTableIds:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+            example:
+              dataSourceTableIds:
+                - 7001
+                - 7002
+      responses:
+        '200':
+          description: Deleted (empty body)
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Deletes several tables from a file-based data source.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        DELETE /dataSources/api/v1/dataSources/{dataSourceId}/tables
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Delete access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X DELETE 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "dataSourceTableIds": [7001, 7002] }'
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}:
+    parameters:
+      - name: dataSourceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 4521
+      - name: tableId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 7001
+    get:
+      summary: Get Data Source Table
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: The table with its columns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceTable'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Retrieves one table with its columns.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001' \
+        -H "Authorization: Bearer <token>"
+        ```
+    put:
+      summary: Update Data Source Table
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceTable'
+            example:
+              alias: Orders
+              description: One row per customer order
+      responses:
+        '200':
+          description: The updated table
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceTable'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Updates a table's metadata such as its alias and description. It does not change the table in the source database.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "alias": "Orders", "description": "One row per customer order" }'
+        ```
+    delete:
+      summary: Delete Data Source Table
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: Deleted (empty body)
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Deletes a table from a file-based data source, including its stored data.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        DELETE /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Delete access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X DELETE 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/schema:
+    get:
+      summary: Get Table Schema
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 7001
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+            default: json
+      responses:
+        '200':
+          description: Column names and types
+          content:
+            application/json:
+              schema:
+                type: object
+              example:
+                name: orders
+                qualifiedName: sales_pg.public.orders
+                description: One row per customer order
+                columns:
+                  order_id:
+                    type: bigint
+                  customer_id:
+                    type: bigint
+                  amount:
+                    type: numeric
+                    description: Order total in USD
+            application/x-yaml:
+              schema:
+                type: string
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns a compact schema of one table — column names, types and descriptions — as JSON or YAML. Handy for writing pipeline SQL or as context for an LLM.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/schema?format=json
+        ```
+
+        ---
+
+        ## 3️⃣ Query Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | format | string | ❌ No | `json` (default) or `yaml` |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001/schema?format=yaml' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/schema:
+    get:
+      summary: Get Data Source Schema
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+            default: json
+      responses:
+        '200':
+          description: Compact schema of every table in the source
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+            application/x-yaml:
+              schema:
+                type: string
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the compact schema (see **Get Table Schema**) of every table in the data source in one call.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/schema?format=json
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/schema' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/rows:
+    get:
+      summary: Preview Table Rows
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 7001
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of rows to return
+          schema:
+            type: integer
+            format: int64
+          example: 50
+      responses:
+        '200':
+          description: Sample rows from the table
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  columns:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DataSourceColumn'
+                  data:
+                    type: array
+                    description: One object per row, keyed by column name
+                    items:
+                      type: object
+                      additionalProperties: true
+                  isExceededMaxRecords:
+                    type: boolean
+                  executionTime:
+                    type: integer
+                    format: int64
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns sample rows from a table for previewing its data.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/rows?limit=50
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001/rows?limit=50' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/columns/{columnId}:
+    put:
+      summary: Update Data Source Column
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 7001
+        - name: columnId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 90001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataSourceColumn'
+            example:
+              description: Order total in USD, including tax
+      responses:
+        '200':
+          description: The updated column
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceColumn'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Updates a column's metadata, such as its description.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/columns/{columnId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001/columns/90001' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "description": "Order total in USD, including tax" }'
+        ```
+  /dataSources/api/v1/{dataSourceId}/table/{tableId}/uniqueColumn:
+    post:
+      summary: Set Unique Columns
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 7001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - columnIds
+              properties:
+                columnIds:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+            example:
+              columnIds:
+                - 90001
+      responses:
+        '200':
+          description: Updated (empty body)
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Marks columns as the table's unique key. Pipelines in merge modes use these columns to match rows.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataSources/api/v1/{dataSourceId}/table/{tableId}/uniqueColumn
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataSources/api/v1/4521/table/7001/uniqueColumn' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "columnIds": [90001] }'
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/descriptions:
+    parameters:
+      - name: dataSourceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 4521
+    get:
+      summary: Get Data Source Descriptions
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: Description tree of the source, its tables and columns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DescriptionNode'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the descriptions of the data source, its tables and their columns as one tree. These descriptions are used as context by AI querying.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/descriptions
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/descriptions' \
+        -H "Authorization: Bearer <token>"
+        ```
+    post:
+      summary: Update Data Source Descriptions
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DescriptionNode'
+            example:
+              id: 4521
+              name: sales_pg
+              description: Sales OLTP replica
+              children:
+                - id: 7001
+                  name: orders
+                  description: One row per customer order
+                  children:
+                    - id: 90001
+                      name: amount
+                      type: numeric
+                      description: Order total in USD
+      responses:
+        '200':
+          description: Saved (empty body)
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Saves descriptions for the data source and any of its tables and columns in one call. Send the tree returned by **Get Data Source Descriptions** with your edits.
+
+        Tables and columns are matched by `id`; ones you leave out are unchanged. The data source's own `description` is always replaced, so include it.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataSources/api/v1/dataSources/{dataSourceId}/descriptions
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/descriptions' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d @descriptions.json
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/table/{tableId}/descriptions:
+    get:
+      summary: Get Table Descriptions
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 7001
+      responses:
+        '200':
+          description: Description tree of the table and its columns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DescriptionNode'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the descriptions of one table and its columns.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/table/{tableId}/descriptions
+        ```
+
+        > Note the singular `table` in this path.
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/table/7001/descriptions' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/descriptions:
+    put:
+      summary: Generate Table Descriptions
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 7001
+      responses:
+        '200':
+          description: The table with generated descriptions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataSourceTable'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Generates descriptions for a table and its columns with AI, replacing the current ones. No request body.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/descriptions
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001/descriptions' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/dataSourceFiles:
+    parameters:
+      - name: dataSourceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 4521
+      - name: tableId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 7001
+    post:
+      summary: Upload Table Files
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - files
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: The uploaded files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DataSourceFile'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Uploads one or more files (e.g. CSV) into a table of a file-based data source.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/dataSourceFiles
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001/dataSourceFiles' \
+        -H "Authorization: Bearer <token>" \
+        -F "files=@orders_jan.csv" \
+        -F "files=@orders_feb.csv"
+        ```
+    delete:
+      summary: Delete Table Files
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+            example:
+              ids:
+                - 3301
+      responses:
+        '200':
+          description: Deleted (empty body)
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Deletes uploaded files from a table.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        DELETE /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/dataSourceFiles
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Delete access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X DELETE 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001/dataSourceFiles' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "ids": [3301] }'
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/dataSourceFiles/{fileId}:
+    get:
+      summary: Download Table File
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+        - name: tableId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 7001
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 3301
+      responses:
+        '200':
+          description: The file contents
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found, or you have no edit access to the data source
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Downloads one uploaded file.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/tables/{tableId}/dataSourceFiles/{fileId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/tables/7001/dataSourceFiles/3301' \
+        -H "Authorization: Bearer <token>" \
+        -o orders_jan.csv
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/syncSchema:
+    get:
+      summary: Sync Data Source Schema
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+      responses:
+        '200':
+          description: The sync request that was started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestStatusLog'
+              example:
+                id: 6b0f2c4e-1f7a-4d2b-9a43-0c9e8d7f5a21
+                status: INITIATED
+                eventId: '4521'
+                eventName: DATA_SOURCE_SYNC_SCHEMA
+                companyId: 7
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Re-reads the tables and columns from the source database so DataGOL picks up new or changed tables. The sync runs in the background.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/syncSchema
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        View access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/syncSchema' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 5️⃣ Behavior Summary
+
+        ```
+        Returns a request with status INITIATED. Track it with either:
+        • GET /noCo/api/v1/requestLog/status/{id}  (id from this response) — DONE or FAILED when finished
+        • GET /dataSources/api/v1/{dataSourceId}/getSyncSchemaStatus
+        ```
+  /dataSources/api/v1/{dataSourceId}/getSyncSchemaStatus:
+    get:
+      summary: Get Schema Sync Status
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      parameters:
+        - name: dataSourceId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 4521
+      responses:
+        '200':
+          description: Status of the latest schema sync
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                      - RUNNING
+                      - COMPLETED
+                      - FAILED
+                      - NOT_AVAILABLE
+              example:
+                status: COMPLETED
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the status of the latest schema sync for a data source.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/{dataSourceId}/getSyncSchemaStatus
+        ```
+
+        > This path has no `/dataSources` segment after `/v1`.
+
+        ---
+
+        ## 3️⃣ Status Values
+
+        | Status | Meaning |
+        | --- | --- |
+        | RUNNING | A sync is in progress |
+        | COMPLETED | The last sync succeeded |
+        | FAILED | The last sync failed |
+        | NOT_AVAILABLE | The source has never been synced |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/4521/getSyncSchemaStatus' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/schemaSyncCron:
+    parameters:
+      - name: dataSourceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 4521
+    put:
+      summary: Set Schema Sync Schedule
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cronExpression
+              properties:
+                cronExpression:
+                  type: string
+                  description: Quartz cron expression, seconds first
+            example:
+              cronExpression: 0 0 2 * * ?
+      responses:
+        '200':
+          description: The active schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaSyncCronEnvelope'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Creates or replaces a recurring schema sync for the data source.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /dataSources/api/v1/dataSources/{dataSourceId}/schemaSyncCron
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/schemaSyncCron' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "cronExpression": "0 0 2 * * ?" }'
+        ```
+
+        ---
+
+        ## 5️⃣ Errors
+
+        | Status | When |
+        | --- | --- |
+        | 400 | Invalid cron expression, or the source is a SaaS (`REST`) connector |
+    get:
+      summary: Get Schema Sync Schedule
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: The active schedule
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaSyncCronEnvelope'
+              example:
+                success: true
+                version: V1
+                date: 1762675600000
+                data:
+                  dataSourceId: 4521
+                  cronExpression: 0 0 2 * * ?
+                  nextFireTime: 1762740000000
+                  previousFireTime: 1762653600000
+        '404':
+          description: No schedule is set for this data source
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the recurring schema sync schedule with its next and previous run times.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/schemaSyncCron
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/schemaSyncCron' \
+        -H "Authorization: Bearer <token>"
+        ```
+    delete:
+      summary: Remove Schema Sync Schedule
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: Removed
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Stops the recurring schema sync for the data source.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        DELETE /dataSources/api/v1/dataSources/{dataSourceId}/schemaSyncCron
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X DELETE 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/schemaSyncCron' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/schemaChanges:
+    parameters:
+      - name: dataSourceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 4521
+    get:
+      summary: List Schema Changes
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: Detected schema changes for the data source
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SchemaChange'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Lists the schema changes detected between syncs — tables, views, columns or foreign keys that were created, deleted or modified in the source.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/schemaChanges
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/schemaChanges' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 4️⃣ Change Types
+
+        `TABLE_CREATED`, `TABLE_DELETED`, `TABLE_MODIFIED`, `VIEW_CREATED`, `VIEW_DELETED`, `VIEW_MODIFIED`, `COLUMN_CREATED`, `COLUMN_DELETED`, `COLUMN_MODIFIED`, `FOREIGN_KEY_CREATED`, `FOREIGN_KEY_DELETED`, `FOREIGN_KEY_MODIFIED`
+    post:
+      summary: Detect Schema Changes
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: The changes found, if any
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaChange'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Reads the current schema from the source and compares it with the last snapshot. No request body.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataSources/api/v1/dataSources/{dataSourceId}/schemaChanges
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/schemaChanges' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataSources/api/v1/dataSources/{dataSourceId}/schemaChanges/{changeId}:
+    parameters:
+      - name: dataSourceId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 4521
+      - name: changeId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 120
+    get:
+      summary: Get Schema Change
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      responses:
+        '200':
+          description: The schema change with before/after snapshots
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaChange'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Retrieves one detected schema change, including the snapshots before and after.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataSources/api/v1/dataSources/{dataSourceId}/schemaChanges/{changeId}
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/schemaChanges/120' \
+        -H "Authorization: Bearer <token>"
+        ```
+    put:
+      summary: Verify Schema Change
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Sources
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verified:
+                  type: boolean
+            example:
+              verified: true
+      responses:
+        '200':
+          description: The updated schema change
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchemaChange'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Marks a schema change as reviewed. Send `"verified": false`, or omit it, to clear the flag.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /dataSources/api/v1/dataSources/{dataSourceId}/schemaChanges/{changeId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the data source.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/dataSources/api/v1/dataSources/4521/schemaChanges/120' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "verified": true }'
+        ```
+  /dataPipeline/api/v2:
+    post:
+      summary: Create Data Pipeline
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataPipelineRequest'
+            examples:
+              sqlPipeline:
+                summary: SQL pipeline, every 6 hours
+                value:
+                  name: daily_orders_rollup
+                  description: Aggregates orders per customer
+                  type: CUSTOM
+                  queryEngine: SPARK
+                  scheduleType: CRON
+                  schedule:
+                    cronExpression: 0 0 */6 ? * *
+                  destination:
+                    id: 4521
+                  streams:
+                    - name: orders_by_customer
+                      outputTableName: orders_by_customer
+                      query: SELECT customer_id, COUNT(*) AS order_count, SUM(amount) AS total FROM sales_pg.public.orders GROUP BY customer_id
+                      syncMode: FULL_REFRESH
+                      executionType: SQL
+                  syncNow: false
+              pythonPipeline:
+                summary: Python pipeline, run on demand
+                value:
+                  name: enrich_leads
+                  type: CUSTOM
+                  scheduleType: MANUAL
+                  streams:
+                    - name: enrich_leads
+                      executionType: PYTHON
+                      script: "print('hello')"
+                      scriptTimeoutSeconds: 600
+      responses:
+        '200':
+          description: The created pipeline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPipeline'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Creates a data pipeline that reads from one or more data sources, transforms the data with SQL (or a Python script) and writes the result to a destination table. A pipeline can run on demand, on a cron, every N hours, or as a node in a DAG.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataPipeline/api/v2
+        ```
+
+        ---
+
+        ## 3️⃣ Authentication
+
+        ``` bash
+        Authorization: Bearer <token>
+        ```
+
+        ---
+
+        ## 4️⃣ Required Permissions
+
+        - Lakehouse member
+        - `EDITOR` on the destination data source
+        - `VIEWER` on every source referenced by the query
+
+        ---
+
+        ## 5️⃣ Field Descriptions
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | name | string | ✅ Yes | Pipeline name |
+        | type | enum | ✅ Yes | Pipeline type (see notes) |
+        | description | string | ❌ No | Free-text description |
+        | destination.id | int64 | ⚠️ Conditional | Data source to write output to. Required for SQL pipelines. |
+        | streams | array | ✅ Yes | One entry per output table (see below) |
+        | queryEngine | enum | ❌ No | Engine that runs the query (see notes) |
+        | scheduleType | enum | ❌ No | `MANUAL` (default), `CRON`, `SCHEDULED`, `DATA_CHANGE` |
+        | schedule | object | ⚠️ Conditional | Schedule settings (see below) |
+        | parameters | object | ❌ No | Defaults for `{{param}}` placeholders |
+        | syncNow | boolean | ❌ No | `true` runs the pipeline right after creation |
+
+        **Notes**
+
+        - **type** — `CUSTOM` (SQL or Python), `STANDARD` (copy tables) or `DEDUP`.
+        - **queryEngine** — `SPARK` (default), `ATHENA`, `SNOWFLAKE`, `BIGQUERY`, `CLOUD_BIGQUERY`, and more. See **List Query Engines**.
+
+        ### Schedule fields
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | cronExpression | string | When `CRON` | Quartz cron, seconds first, e.g. `0 0 */6 ? * *` |
+        | basicSchedule.units | string | When `SCHEDULED` | Every N hours: `1`, `2`, `3`, `6`, `8`, `12`, `24` |
+        | basicSchedule.timeUnit | enum | When `SCHEDULED` | `HOURS` |
+
+        ### Stream fields
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | name | string | ✅ Yes | Stream name |
+        | outputTableName | string | ✅ Yes | Output table name (see notes) |
+        | query | string | ⚠️ Conditional | SQL `SELECT`. Required for SQL streams. |
+        | syncMode | enum | ❌ No | How output is written (see notes) |
+        | uniqueColumns | string[] | ⚠️ Conditional | Key columns. Required for merge modes. |
+        | cursor.cursorName | string | ⚠️ Conditional | Column that marks new rows. Required for incremental modes. |
+        | executionType | enum | ❌ No | `SQL` (default) or `PYTHON` |
+        | script | string | ⚠️ Conditional | Python source. Required when `PYTHON`. |
+        | scriptTimeoutSeconds | integer | ❌ No | Python timeout in seconds, > 0 |
+
+        **Notes**
+
+        - **outputTableName** — Letters, digits and `_`, max 128 chars. Must be unique per destination.
+        - **query** — Reference tables as `<dataSourceName>.<schema>.<table>`.
+        - **syncMode** — `FULL_REFRESH` (default), `INCREMENTAL_APPEND`, `INCREMENTAL_APPEND_V2`, `INCREMENTAL_APPEND_MERGE` or `INCREMENTAL_APPEND_V2_MERGE`.
+
+        > For SQL pipelines you do not send `sources` — they are derived from the query.
+
+        ---
+
+        ## 6️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataPipeline/api/v2' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "name": "daily_orders_rollup",
+          "type": "CUSTOM",
+          "scheduleType": "CRON",
+          "schedule": { "cronExpression": "0 0 */6 ? * *" },
+          "destination": { "id": 4521 },
+          "streams": [{
+            "name": "orders_by_customer",
+            "outputTableName": "orders_by_customer",
+            "query": "SELECT customer_id, COUNT(*) AS order_count FROM sales_pg.public.orders GROUP BY customer_id",
+            "syncMode": "FULL_REFRESH"
+          }]
+        }'
+        ```
+
+        ---
+
+        ## 7️⃣ Validation
+
+        | Rejected with 400 when |
+        | --- |
+        | `streams` is an empty list, or a SQL stream has no `query` |
+        | `outputTableName` has invalid characters or already exists for the destination |
+        | `cronExpression` is not a valid Quartz cron |
+        | The query is not a plain `SELECT` |
+        | `syncMode` is not supported by the destination (SQL-database destinations allow only `FULL_REFRESH`) |
+
+        ---
+
+        ## 8️⃣ Behavior Summary
+
+        ```
+        If queryEngine is not enabled for your company, SPARK is used.
+        With syncNow=true the first run starts asynchronously; poll the pipeline for its jobs.
+        ```
+    get:
+      summary: List Data Pipelines
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      parameters:
+        - name: includeJobs
+          in: query
+          required: false
+          description: Include recent jobs for each pipeline
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: All pipelines you can access
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DataPipeline'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns every pipeline you can access, unpaginated. For large accounts prefer **Search Data Pipelines**.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataPipeline/api/v2?includeJobs=false
+        ```
+
+        ---
+
+        ## 3️⃣ Query Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | includeJobs | boolean | ❌ No | Include recent jobs (default `true`) |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataPipeline/api/v2?includeJobs=false' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataPipeline/api/v2/getAllPaginated:
+    post:
+      summary: Search Data Pipelines
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number, starting at 1
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          required: false
+          description: Pipelines per page
+          schema:
+            type: integer
+            default: 12
+        - name: includeJobs
+          in: query
+          required: false
+          description: Include recent jobs for each pipeline
+          schema:
+            type: boolean
+            default: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                searchString:
+                  type: string
+                  description: Matches pipeline name or ID, output table, workbook, or source/destination name or ID
+                searchFilters:
+                  type: object
+                  description: Filters keyed by `TYPE`, `STATUS`, `CREATED_BY` or `SOURCE`; each value is a list of strings
+                  additionalProperties:
+                    type: array
+                    items:
+                      type: string
+                sortByField:
+                  type: string
+                  description: '`oldest` sorts oldest first; anything else sorts newest first'
+            example:
+              searchString: orders
+              searchFilters:
+                TYPE:
+                  - CUSTOM
+                STATUS:
+                  - FAILED
+      responses:
+        '200':
+          description: A page of pipelines
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dataPipelineResponses:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DataPipeline'
+                  page:
+                    $ref: '#/components/schemas/PageInfo'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Searches and filters pipelines with pagination, newest first.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataPipeline/api/v2/getAllPaginated?page=1&size=12
+        ```
+
+        ---
+
+        ## 3️⃣ Request Body
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | searchString | string | ❌ No | Free-text search |
+        | searchFilters | object | ✅ Yes (may be `{}`) | Filters — see below |
+        | sortByField | string | ❌ No | `oldest` for oldest first |
+
+        | Filter key | Values |
+        | --- | --- |
+        | TYPE | `CUSTOM`, `STANDARD`, `DEDUP`, `MV_PIPELINE` |
+        | STATUS | Status of the latest job: `COMPLETED`, `FAILED`, `RUNNING`, ... |
+        | CREATED_BY | User IDs |
+        | SOURCE | Source provider names, e.g. `postgresql` |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataPipeline/api/v2/getAllPaginated?page=1&size=12' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "searchString": "orders", "searchFilters": { "TYPE": ["CUSTOM"] } }'
+        ```
+
+        ---
+
+        ## 5️⃣ Behavior Summary
+
+        ```
+        Archived and child pipelines are excluded.
+        Note: page.pageNumber in the response is 0-based, while the page query parameter is 1-based.
+        ```
+  /dataPipeline/api/v2/{pipelineId}:
+    parameters:
+      - name: pipelineId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 1001
+    get:
+      summary: Get Data Pipeline
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      responses:
+        '200':
+          description: The pipeline, its streams and recent jobs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPipeline'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Retrieves a pipeline's full definition — streams, schedule, destination — plus its recent jobs and next scheduled run times.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataPipeline/api/v2/{pipelineId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        View access to the pipeline.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataPipeline/api/v2/1001' \
+        -H "Authorization: Bearer <token>"
+        ```
+    put:
+      summary: Update Data Pipeline
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DataPipelineRequest'
+      responses:
+        '200':
+          description: The updated pipeline
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataPipeline'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Updates a pipeline's query, streams, schedule or destination. Send the full pipeline definition — fetch it with **Get Data Pipeline**, change what you need, and send it back.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /dataPipeline/api/v2/{pipelineId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the pipeline.
+
+        ---
+
+        ## 4️⃣ Request Body
+
+        Same fields and validation as **Create Data Pipeline**. Keep each stream's `id` so the stream is updated rather than replaced.
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/dataPipeline/api/v2/1001' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d @pipeline.json
+        ```
+  /dataPipeline/api/v1/{pipelineId}:
+    delete:
+      summary: Delete Data Pipeline
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1001
+      responses:
+        '200':
+          description: Deleted (empty body)
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Deletes a pipeline and stops its schedule. Tables it already wrote are not dropped.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        DELETE /dataPipeline/api/v1/{pipelineId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Delete access to the pipeline.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X DELETE 'https://be.datagol.ai/dataPipeline/api/v1/1001' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 5️⃣ Errors
+
+        | Status | When |
+        | --- | --- |
+        | 400 | The pipeline is a node in one or more DAGs — remove it from those DAGs first |
+  /dataPipeline/api/v1/{pipelineId}/run:
+    post:
+      summary: Run Data Pipeline
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  description: Values for `{{param}}` placeholders in the query
+                  additionalProperties: true
+                streamIds:
+                  type: array
+                  description: Run only these streams. Empty runs all streams.
+                  items:
+                    type: integer
+                    format: int64
+            examples:
+              runAll:
+                summary: Run all streams
+                value: {}
+              withParameters:
+                summary: Run with parameters
+                value:
+                  parameters:
+                    start_date: '2026-01-01'
+      responses:
+        '200':
+          description: The job that was started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineJob'
+              example:
+                id: 55501
+                jobGroupId: 3f2c9a1e-7b1d-4c55-9f0e-2a6d8c1b7e44
+                status: STARTED
+                startTime: 1762675500000
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Starts a run of the pipeline. The run is asynchronous: the response is the new job with status `STARTED`; poll **Get Pipeline Job** until it finishes.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataPipeline/api/v1/{pipelineId}/run
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the pipeline and `EDITOR` on its destination.
+
+        ---
+
+        ## 4️⃣ Request Body
+
+        A JSON body is required — send `{}` to run with defaults.
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | parameters | object | ❌ No | Values for query placeholders |
+        | streamIds | int64[] | ❌ No | Run only these streams |
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataPipeline/api/v1/1001/run' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "parameters": { "start_date": "2026-01-01" } }'
+        ```
+
+        ---
+
+        ## 6️⃣ Errors
+
+        | Status | When |
+        | --- | --- |
+        | 400 | A job for this pipeline is already running |
+  /dataPipeline/api/v2/{pipelineId}/job/{jobId}:
+    get:
+      summary: Get Pipeline Job
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1001
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 55501
+      responses:
+        '200':
+          description: The job and its per-stream status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineJob'
+              example:
+                id: 55501
+                jobGroupId: 3f2c9a1e-7b1d-4c55-9f0e-2a6d8c1b7e44
+                status: COMPLETED
+                startTime: 1762675500000
+                endTime: 1762675620000
+                streams:
+                  - id: 8801
+                    name: orders_by_customer
+                    pipelineId: 1001
+                    jobId: 55501
+                    status: COMPLETED
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Retrieves one run (job) of a pipeline with the status of each stream. Use it to poll a run started with **Run Data Pipeline**.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataPipeline/api/v2/{pipelineId}/job/{jobId}
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataPipeline/api/v2/1001/job/55501' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 4️⃣ Job Status Values
+
+        | Status | Meaning |
+        | --- | --- |
+        | QUEUED / PENDING / STARTED / RUNNING | In progress |
+        | COMPLETED / SUCCEEDED | Finished successfully |
+        | FAILED / PRE_VALIDATION_FAILED / POST_VALIDATION_FAILED | Failed — see **Get Pipeline Job Error Log** |
+        | CANCELLED | Cancelled with **Cancel Pipeline Job** |
+  /dataPipeline/api/v1/{pipelineId}/job/{jobId}/cancelSync:
+    get:
+      summary: Cancel Pipeline Job
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1001
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 55501
+      responses:
+        '200':
+          description: The job after cancellation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PipelineJob'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Cancels a running job, including any child stream jobs. The job's status becomes `CANCELLED`.
+
+        > This is a `GET` request even though it changes state.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataPipeline/api/v1/{pipelineId}/job/{jobId}/cancelSync
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the pipeline.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataPipeline/api/v1/1001/job/55501/cancelSync' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataPipeline/api/v1/{pipelineId}/job/{jobId}/errorLog:
+    get:
+      summary: Get Pipeline Job Error Log
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      parameters:
+        - name: pipelineId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1001
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 55501
+      responses:
+        '200':
+          description: The first error message recorded for the job, or an empty body if none
+          content:
+            application/json:
+              schema:
+                type: string
+              example: 'Table or view not found: sales_pg.public.order'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the error that caused a job to fail.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataPipeline/api/v1/{pipelineId}/job/{jobId}/errorLog
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataPipeline/api/v1/1001/job/55501/errorLog' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataPipeline/api/v2/job:
+    post:
+      summary: List Failed or Running Jobs
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number, starting at 0
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          required: false
+          description: Jobs per page
+          schema:
+            type: integer
+            default: 20
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - FAILED
+                    - STARTED
+                time:
+                  type: object
+                  description: Look-back window. Required when `status` is `FAILED`.
+                  properties:
+                    unit:
+                      type: integer
+                      format: int64
+                    unitType:
+                      type: string
+                      enum:
+                        - MINUTE
+                        - HOUR
+                        - DAY
+            examples:
+              failedLast24h:
+                summary: Jobs that failed in the last 24 hours
+                value:
+                  status: FAILED
+                  time:
+                    unit: 24
+                    unitType: HOUR
+              running:
+                summary: Jobs running now
+                value:
+                  status: STARTED
+      responses:
+        '200':
+          description: A page of jobs across all pipelines
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  jobs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        pipelineInfo:
+                          type: object
+                          properties:
+                            pipelineId:
+                              type: integer
+                              format: int64
+                            name:
+                              type: string
+                        jobV2:
+                          $ref: '#/components/schemas/PipelineJob'
+                  page:
+                    $ref: '#/components/schemas/PageInfo'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Lists jobs across all pipelines you can access that are currently running, or that failed within a time window. Useful for monitoring.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /dataPipeline/api/v2/job?page=0&size=20
+        ```
+
+        ---
+
+        ## 3️⃣ Request Body
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | status | enum | ✅ Yes | `FAILED` or `STARTED` (running) |
+        | time.unit | int64 | When `FAILED` | Size of the look-back window |
+        | time.unitType | enum | When `FAILED` | `MINUTE`, `HOUR` or `DAY` |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/dataPipeline/api/v2/job?page=0&size=20' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "status": "FAILED", "time": { "unit": 24, "unitType": "HOUR" } }'
+        ```
+  /dataPipeline/api/v1/getAllScheduledJobs/{unit}/{unitType}:
+    get:
+      summary: List Upcoming Scheduled Runs
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      parameters:
+        - name: unit
+          in: path
+          required: true
+          description: Size of the look-ahead window
+          schema:
+            type: integer
+            format: int64
+          example: 6
+        - name: unitType
+          in: path
+          required: true
+          description: Unit of the look-ahead window
+          schema:
+            type: string
+            enum:
+              - MINUTE
+              - HOUR
+              - DAY
+          example: HOUR
+      responses:
+        '200':
+          description: Pipelines scheduled to run within the window
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    pipeline:
+                      $ref: '#/components/schemas/DataPipeline'
+                    nextFireTimes:
+                      type: array
+                      items:
+                        type: integer
+                        format: int64
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Lists scheduled pipelines (`CRON` or `SCHEDULED`) that will run within the next `unit` × `unitType`, with their upcoming run times.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataPipeline/api/v1/getAllScheduledJobs/{unit}/{unitType}
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataPipeline/api/v1/getAllScheduledJobs/6/HOUR' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /dataPipeline/api/v2/queryEngines:
+    get:
+      summary: List Query Engines
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - Data Pipelines
+      responses:
+        '200':
+          description: Query engines enabled for your company
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum:
+                    - SPARK
+                    - ATHENA
+                    - SNOWFLAKE
+                    - BIGQUERY
+                    - CLOUD_BIGQUERY
+                    - MYSQL
+                    - SQL_SERVER
+                    - REDSHIFT
+                    - JDBC
+              example:
+                - SPARK
+                - ATHENA
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the query engines you can set as `queryEngine` on a pipeline. `SPARK` is always available.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /dataPipeline/api/v2/queryEngines
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/dataPipeline/api/v2/queryEngines' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /orchestration/api/v1/dags:
+    get:
+      summary: List DAGs
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      parameters:
+        - name: pipelineId
+          in: query
+          required: false
+          description: Return only DAGs that contain these pipelines. Repeat the parameter to pass several IDs.
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+          style: form
+          explode: true
+          example: [1001]
+      responses:
+        '200':
+          description: DAGs in the caller's company, with nodes, edges and latest run
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dag'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Lists the DAGs (orchestration workflows) in your company. Each DAG is returned in full — nodes, edges and its latest run.
+
+        - Admins see every active DAG in the company, newest first.
+        - Other users see only the DAGs they have been given access to.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /orchestration/api/v1/dags
+        ```
+
+        ---
+
+        ## 3️⃣ Query Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | pipelineId | int64 (repeatable) | ❌ No | Return only DAGs containing these pipelines. A non-admin needs access to each pipeline. |
+
+        ---
+
+        ## 4️⃣ Authentication
+
+        ``` bash
+        Authorization: Bearer <token>
+        ```
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/orchestration/api/v1/dags' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 6️⃣ Behavior Summary
+
+        ```
+        Returns { "results": [ Dag, ... ] }.
+        Deleted DAGs are never returned.
+        For a lightweight, paginated list use POST /orchestration/api/v1/dags/search.
+        ```
+    post:
+      summary: Create DAG
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DagRequest'
+            examples:
+              cron:
+                summary: Run every night at 02:00
+                value:
+                  name: Nightly sales refresh
+                  scheduleType: CRON
+                  schedule:
+                    cronExpression: 0 0 2 * * ?
+                  metadata:
+                    description: Loads and aggregates sales
+                  defaultParameters:
+                    region: EMEA
+              every6Hours:
+                summary: Run every 6 hours
+                value:
+                  name: Six-hourly sync
+                  scheduleType: SCHEDULED
+                  schedule:
+                    basicSchedule:
+                      units: '6'
+                      timeUnit: HOURS
+              manual:
+                summary: Run only on demand
+                value:
+                  name: Ad-hoc backfill
+                  scheduleType: MANUAL
+      responses:
+        '200':
+          description: The created DAG (without nodes, edges or runs)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dag'
+              example:
+                id: 42
+                name: Nightly sales refresh
+                companyId: 7
+                createdAt: 1762675200000
+                metadata:
+                  description: Loads and aggregates sales
+                scheduleType: CRON
+                schedule:
+                  basicSchedule:
+                    timeUnit: HOURS
+                  cronExpression: 0 0 2 * * ?
+                defaultParameters:
+                  region: EMEA
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Creates an empty DAG — a workflow that runs data pipelines in dependency order. Add pipelines to it with **Add DAG Node** and order them with **Add DAG Edge**.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /orchestration/api/v1/dags
+        ```
+
+        ---
+
+        ## 3️⃣ Authentication
+
+        ``` bash
+        Authorization: Bearer <token>
+        ```
+
+        ---
+
+        ## 4️⃣ Request Headers
+
+        | Header | Required |
+        | --- | --- |
+        | Authorization | ✅ Yes |
+        | Content-Type: application/json | ✅ Yes |
+
+        ---
+
+        ## 5️⃣ Field Descriptions
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | name | string | ✅ Yes | Display name of the DAG |
+        | scheduleType | enum | ❌ No | `MANUAL` (default), `CRON`, `SCHEDULED` or `DATA_CHANGE` |
+        | schedule | object | ⚠️ Conditional | Schedule settings (see below) |
+        | metadata | object | ❌ No | Free-form JSON stored with the DAG |
+        | defaultParameters | object | ❌ No | Default parameters passed to every run |
+
+        ### Schedule fields
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | cronExpression | string | When `CRON` | Quartz cron, seconds first, e.g. `0 0 2 * * ?` |
+        | basicSchedule.units | string | When `SCHEDULED` | Every N hours: `1`, `2`, `3`, `6`, `8`, `12`, `24` |
+        | basicSchedule.timeUnit | enum | When `SCHEDULED` | `HOURS` |
+
+        > Omit `schedule` for a manual DAG. Do not send `"schedule": null`.
+
+        ---
+
+        ## 6️⃣ Schedule Types
+
+        | Type | Description |
+        | --- | --- |
+        | MANUAL | Runs only when triggered with **Create DAG Run** |
+        | CRON | Runs on `schedule.cronExpression` |
+        | SCHEDULED | Runs every `schedule.basicSchedule.units` hours |
+        | DATA_CHANGE | Triggered by changes in the source data |
+
+        ---
+
+        ## 7️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/orchestration/api/v1/dags' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "name": "Nightly sales refresh",
+          "scheduleType": "CRON",
+          "schedule": { "cronExpression": "0 0 2 * * ?" },
+          "defaultParameters": { "region": "EMEA" }
+        }'
+        ```
+
+        ---
+
+        ## 8️⃣ Behavior Summary
+
+        ```
+        Creates the DAG in the caller's company and gives the caller access to it.
+        For CRON and SCHEDULED DAGs a scheduler job is registered immediately.
+        The response does not include nodes, edges or runs.
+        ```
+  /orchestration/api/v1/dags/search:
+    post:
+      summary: Search DAGs
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page number, starting at 1
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          required: false
+          description: Number of DAGs per page
+          schema:
+            type: integer
+            default: 20
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                searchString:
+                  type: string
+                  description: Matches the DAG name (case-insensitive) or ID. Empty returns all DAGs.
+            example:
+              searchString: sales
+      responses:
+        '200':
+          description: Matching DAGs, paginated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  version:
+                    type: string
+                  date:
+                    type: integer
+                    format: int64
+                  data:
+                    type: object
+                    properties:
+                      dags:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Dag'
+                      page:
+                        $ref: '#/components/schemas/PageInfo'
+              example:
+                success: true
+                version: V1
+                date: 1762675600000
+                data:
+                  dags:
+                    - id: 42
+                      name: Nightly sales refresh
+                      companyId: 7
+                      createdAt: 1762675200000
+                      scheduleType: CRON
+                      schedule:
+                        cronExpression: 0 0 2 * * ?
+                  page:
+                    pageNumber: 1
+                    pageSize: 20
+                    totalNumberOfRecords: 1
+                    totalNumberOfPages: 1
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Searches DAGs by name or ID with pagination. Results are lightweight — they do not include nodes, edges or runs.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /orchestration/api/v1/dags/search?page=1&size=20
+        ```
+
+        ---
+
+        ## 3️⃣ Query Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | page | integer | ❌ No | Page number, starting at 1 (default 1) |
+        | size | integer | ❌ No | Page size (default 20) |
+
+        ---
+
+        ## 4️⃣ Request Body
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | searchString | string | ❌ No | Case-insensitive match on DAG name, or a match on DAG ID |
+
+        Send `{}` to list all DAGs.
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/orchestration/api/v1/dags/search?page=1&size=20' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "searchString": "sales" }'
+        ```
+
+        ---
+
+        ## 6️⃣ Behavior Summary
+
+        ```
+        The response is wrapped in the standard envelope: { success, version, date, data }.
+        data.dags holds the page of DAGs; data.page holds the pagination totals.
+        ```
+  /orchestration/api/v1/dags/{dagId}:
+    parameters:
+      - name: dagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+    get:
+      summary: Get DAG
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      responses:
+        '200':
+          description: The DAG with its nodes, edges and latest run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dag'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Retrieves one DAG with its full graph: nodes (pipelines), edges (dependencies) and the latest run.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /orchestration/api/v1/dags/{dagId}
+        ```
+
+        ---
+
+        ## 3️⃣ Path Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | dagId | int64 | ✅ Yes | DAG identifier |
+
+        ---
+
+        ## 4️⃣ Required Permissions
+
+        View access to the DAG.
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/orchestration/api/v1/dags/42' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 6️⃣ Errors
+
+        | Status | When |
+        | --- | --- |
+        | 403 | The DAG belongs to another company, or you have no access to it |
+        | 404 | The DAG does not exist or was deleted |
+    put:
+      summary: Update DAG
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DagRequest'
+            example:
+              name: Nightly sales refresh
+              scheduleType: CRON
+              schedule:
+                cronExpression: 0 30 3 * * ?
+              metadata:
+                description: Loads and aggregates sales
+              defaultParameters:
+                region: EMEA
+      responses:
+        '200':
+          description: The updated DAG
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dag'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Updates a DAG's name, schedule, metadata and default parameters. Nodes and edges are managed through their own endpoints.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /orchestration/api/v1/dags/{dagId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the DAG.
+
+        ---
+
+        ## 4️⃣ Request Body
+
+        Same fields as **Create DAG**. This is a full replace:
+
+        | Field | If omitted |
+        | --- | --- |
+        | name | Rejected — required |
+        | scheduleType | Becomes `MANUAL` |
+        | metadata | Cleared |
+        | defaultParameters | Cleared |
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/orchestration/api/v1/dags/42' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{
+          "name": "Nightly sales refresh",
+          "scheduleType": "CRON",
+          "schedule": { "cronExpression": "0 30 3 * * ?" }
+        }'
+        ```
+
+        ---
+
+        ## 6️⃣ Behavior Summary
+
+        ```
+        CRON / SCHEDULED: the scheduler job is rescheduled.
+        MANUAL: the scheduler job is removed.
+        Any nodes or edges in the body are ignored.
+        ```
+    delete:
+      summary: Delete DAG
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      responses:
+        '200':
+          description: The deleted DAG
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dag'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Deletes a DAG together with its nodes and edges, and stops its schedule. The pipelines the DAG referenced are not deleted.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        DELETE /orchestration/api/v1/dags/{dagId}
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Delete access to the DAG.
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X DELETE 'https://be.datagol.ai/orchestration/api/v1/dags/42' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /orchestration/api/v1/dags/{dagId}/pipelinesV2:
+    parameters:
+      - name: dagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+    get:
+      summary: List Pipelines in DAG
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      parameters:
+        - name: runId
+          in: query
+          required: false
+          description: Return the pipelines as they were in this run
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Pipelines referenced by the DAG's nodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DataPipeline'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the full definition of every pipeline used by the DAG's nodes, in the same shape as **Get Data Pipeline**.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /orchestration/api/v1/dags/{dagId}/pipelinesV2
+        ```
+
+        ---
+
+        ## 3️⃣ Query Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | runId | int64 | ❌ No | Return the pipelines used by this run |
+
+        ---
+
+        ## 4️⃣ Required Permissions
+
+        View access to the DAG.
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/orchestration/api/v1/dags/42/pipelinesV2' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /orchestration/api/v1/dags/{dagId}/snapshots:
+    parameters:
+      - name: dagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+    get:
+      summary: Get DAG Snapshot
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      parameters:
+        - name: snapshotId
+          in: query
+          required: false
+          description: Snapshot to return (from a run's `dagSnapshotId`). Omit for the current graph.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: One snapshot of the DAG graph
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Dag'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the DAG graph (nodes and edges) as it was when a run started. Every run records the snapshot it executed in `dagSnapshotId`, so you can see the exact graph a past run used even after the DAG was edited.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /orchestration/api/v1/dags/{dagId}/snapshots?snapshotId={snapshotId}
+        ```
+
+        ---
+
+        ## 3️⃣ Query Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | snapshotId | int64 | ❌ No | Snapshot ID from a run. Omit to get the current graph. |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/orchestration/api/v1/dags/42/snapshots?snapshotId=88' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 5️⃣ Behavior Summary
+
+        ```
+        Returns { "results": [ Dag ] } with exactly one element containing nodes and edges.
+        ```
+  /orchestration/api/v1/dags/{dagId}/nodes:
+    parameters:
+      - name: dagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+    post:
+      summary: Add DAG Node
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DagNodeRequest'
+            example:
+              pipelineId: 1001
+              metadata:
+                position:
+                  x: 120
+                  y: 80
+      responses:
+        '200':
+          description: The created node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DagNode'
+              example:
+                id: 501
+                dagId: 42
+                pipelineId: 1001
+                metadata:
+                  position:
+                    x: 120
+                    y: 80
+                createdAt: 1762675300000
+                updatedAt: 1762675300000
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Adds a pipeline to the DAG as a node. Each node is one pipeline; a pipeline can appear only once in a DAG.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /orchestration/api/v1/dags/{dagId}/nodes
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the DAG.
+
+        ---
+
+        ## 4️⃣ Field Descriptions
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | pipelineId | int64 | ✅ Yes | ID of an existing data pipeline in your company |
+        | metadata | object | ❌ No | Free-form JSON, e.g. the node's position on the canvas |
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/orchestration/api/v1/dags/42/nodes' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "pipelineId": 1001, "metadata": { "position": { "x": 120, "y": 80 } } }'
+        ```
+
+        ---
+
+        ## 6️⃣ Behavior Summary
+
+        ```
+        Users who can access the DAG are given access to the pipeline.
+        Rejected with 400 if pipelineId is missing, belongs to another company,
+        or is already a node in this DAG.
+        ```
+    put:
+      summary: Update DAG Nodes (bulk)
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nodes
+              properties:
+                nodes:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/DagNodeRequest'
+            example:
+              nodes:
+                - id: 501
+                  pipelineId: 1001
+                  metadata:
+                    position:
+                      x: 200
+                      y: 80
+                - id: 502
+                  pipelineId: 1002
+                  metadata:
+                    position:
+                      x: 420
+                      y: 80
+      responses:
+        '200':
+          description: The updated nodes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DagNode'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Updates several nodes in one call — typically used to save canvas positions after a layout change.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /orchestration/api/v1/dags/{dagId}/nodes
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the DAG.
+
+        ---
+
+        ## 4️⃣ Field Descriptions
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | nodes | array | ✅ Yes | Nodes to update (must not be empty) |
+        | nodes[].id | int64 | ✅ Yes | Node ID |
+        | nodes[].pipelineId | int64 | ✅ Yes | Pipeline for the node |
+        | nodes[].metadata | object | ❌ No | Replaces the stored metadata (omitting it clears it) |
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/orchestration/api/v1/dags/42/nodes' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "nodes": [ { "id": 501, "pipelineId": 1001, "metadata": { "position": { "x": 200, "y": 80 } } } ] }'
+        ```
+  /orchestration/api/v1/dags/{dagId}/nodes/{nodeId}:
+    parameters:
+      - name: dagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+      - name: nodeId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 501
+    put:
+      summary: Update DAG Node
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DagNodeRequest'
+            example:
+              pipelineId: 1003
+              metadata:
+                position:
+                  x: 120
+                  y: 200
+      responses:
+        '200':
+          description: The updated node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DagNode'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Replaces the pipeline or metadata of one node.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /orchestration/api/v1/dags/{dagId}/nodes/{nodeId}
+        ```
+
+        ---
+
+        ## 3️⃣ Field Descriptions
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | pipelineId | int64 | ✅ Yes | Pipeline for the node |
+        | metadata | object | ❌ No | Replaces the stored metadata (omitting it clears it) |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/orchestration/api/v1/dags/42/nodes/501' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "pipelineId": 1003 }'
+        ```
+    delete:
+      summary: Delete DAG Node
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      responses:
+        '200':
+          description: The deleted node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DagNode'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Removes a node from the DAG, along with every edge into or out of it. The pipeline itself is not deleted.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        DELETE /orchestration/api/v1/dags/{dagId}/nodes/{nodeId}
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X DELETE 'https://be.datagol.ai/orchestration/api/v1/dags/42/nodes/501' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /orchestration/api/v1/dags/{dagId}/edges:
+    parameters:
+      - name: dagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+    post:
+      summary: Add DAG Edge
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DagEdgeRequest'
+            example:
+              fromNodeId: 501
+              toNodeId: 502
+      responses:
+        '200':
+          description: The created edge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DagEdge'
+              example:
+                id: 901
+                dagId: 42
+                fromNodeId: 501
+                toNodeId: 502
+                createdAt: 1762675400000
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Adds a dependency between two nodes: the `toNodeId` pipeline runs only after the `fromNodeId` pipeline finishes. Nodes run in topological order along these edges.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /orchestration/api/v1/dags/{dagId}/edges
+        ```
+
+        ---
+
+        ## 3️⃣ Field Descriptions
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | fromNodeId | int64 | ✅ Yes | Upstream node ID (a node ID, not a pipeline ID) |
+        | toNodeId | int64 | ✅ Yes | Downstream node ID |
+        | metadata | object | ❌ No | Free-form JSON |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/orchestration/api/v1/dags/42/edges' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "fromNodeId": 501, "toNodeId": 502 }'
+        ```
+
+        ---
+
+        ## 5️⃣ Validation
+
+        | Rejected with 400 when |
+        | --- |
+        | `fromNodeId` or `toNodeId` is missing |
+        | `fromNodeId` equals `toNodeId` |
+        | Either node is not in this DAG |
+        | The same edge already exists |
+        | The edge would create a cycle |
+  /orchestration/api/v1/dags/{dagId}/edges/{edgeId}:
+    parameters:
+      - name: dagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+      - name: edgeId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 901
+    put:
+      summary: Update DAG Edge
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DagEdgeRequest'
+            example:
+              fromNodeId: 501
+              toNodeId: 503
+      responses:
+        '200':
+          description: The updated edge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DagEdge'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Re-points an existing edge to different nodes. The same validation as **Add DAG Edge** applies, including the cycle check.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /orchestration/api/v1/dags/{dagId}/edges/{edgeId}
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/orchestration/api/v1/dags/42/edges/901' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "fromNodeId": 501, "toNodeId": 503 }'
+        ```
+    delete:
+      summary: Delete DAG Edge
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      responses:
+        '200':
+          description: The deleted edge
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DagEdge'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Removes a dependency between two nodes.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        DELETE /orchestration/api/v1/dags/{dagId}/edges/{edgeId}
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X DELETE 'https://be.datagol.ai/orchestration/api/v1/dags/42/edges/901' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /orchestration/api/v1/dags/{dagId}/runs:
+    parameters:
+      - name: dagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+    post:
+      summary: Create DAG Run
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DagRunRequest'
+            examples:
+              fullRun:
+                summary: Run the whole DAG
+                value: {}
+              withParameters:
+                summary: Run with parameters
+                value:
+                  parameters:
+                    region: EMEA
+              retryFromNode:
+                summary: Retry a failed run from a node
+                value:
+                  startFromNodeId: 502
+                  parentId: 3300
+      responses:
+        '200':
+          description: The new run with one job per node
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DagRun'
+              example:
+                id: 3301
+                dagId: 42
+                status: RUNNING
+                startTime: 1762675500000
+                type: MANUAL
+                parameters:
+                  region: EMEA
+                dagSnapshotId: 88
+                jobMappings:
+                  - id: 7001
+                    dagRunId: 3301
+                    dagNodeId: 501
+                    jobId: 55501
+                    executionOrder: 1
+                    status: IN_PROGRESS
+                  - id: 7002
+                    dagRunId: 3301
+                    dagNodeId: 502
+                    executionOrder: 2
+                    status: PENDING
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Starts a manual run of the DAG. Pipelines execute one after another in topological order; each node gets a job in `jobMappings`.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        POST /orchestration/api/v1/dags/{dagId}/runs
+        ```
+
+        ---
+
+        ## 3️⃣ Required Permissions
+
+        Edit access to the DAG.
+
+        ---
+
+        ## 4️⃣ Field Descriptions
+
+        All fields are optional, but a JSON body is required — send `{}` for a plain run.
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | parameters | object | ❌ No | Run parameters passed to the pipelines |
+        | startFromNodeId | int64 | ❌ No | Start at this node. Upstream nodes are marked `NOT_EXECUTED`. |
+        | parentId | int64 | ❌ No | ID of an earlier run of this DAG that this run retries |
+
+        ---
+
+        ## 5️⃣ Example Request
+
+        ``` bash
+        curl -X POST 'https://be.datagol.ai/orchestration/api/v1/dags/42/runs' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{}'
+        ```
+
+        ---
+
+        ## 6️⃣ Retrying a Failed Run
+
+        If `startFromNodeId` points at the node that failed in the latest run, the new run reuses that run's parameters and graph snapshot and is linked to it through `parentId`.
+
+        ---
+
+        ## 7️⃣ Errors
+
+        | Status | When |
+        | --- | --- |
+        | 400 | The DAG already has a run in `QUEUED`, `PENDING`, `RUNNING` or `STARTED` |
+        | 400 | The DAG has no nodes |
+        | 400 | `parentId` is not a run of this DAG |
+
+        ---
+
+        ## 8️⃣ Behavior Summary
+
+        ```
+        1. Snapshot the current graph (dagSnapshotId)
+        2. Create one job per node, ordered by executionOrder
+        3. Start the first pipeline; the next node starts when the previous one finishes
+        Poll GET /orchestration/api/v1/dags/{dagId}/runs/{runId} for progress.
+        ```
+    get:
+      summary: List DAG Runs
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      parameters:
+        - name: includeJobs
+          in: query
+          required: false
+          description: Include the per-node jobs of each run
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: The 20 most recent runs, newest first
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DagRun'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Returns the 20 most recent runs of the DAG, newest first.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /orchestration/api/v1/dags/{dagId}/runs?includeJobs=true
+        ```
+
+        ---
+
+        ## 3️⃣ Query Parameters
+
+        | Parameter | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | includeJobs | boolean | ❌ No | When `true`, each run includes `jobMappings` with the pipeline job for each node |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/orchestration/api/v1/dags/42/runs?includeJobs=true' \
+        -H "Authorization: Bearer <token>"
+        ```
+  /orchestration/api/v1/dags/{dagId}/runs/{runId}:
+    parameters:
+      - name: dagId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 42
+      - name: runId
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+        example: 3301
+    get:
+      summary: Get DAG Run
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      responses:
+        '200':
+          description: The run with its per-node jobs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DagRun'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Retrieves one run with the status of every node and the underlying pipeline job. Use this to poll a run started with **Create DAG Run**.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        GET /orchestration/api/v1/dags/{dagId}/runs/{runId}
+        ```
+
+        ---
+
+        ## 3️⃣ Example Request
+
+        ``` bash
+        curl -X GET 'https://be.datagol.ai/orchestration/api/v1/dags/42/runs/3301' \
+        -H "Authorization: Bearer <token>"
+        ```
+
+        ---
+
+        ## 4️⃣ Run Status Values
+
+        | Run `status` | Meaning |
+        | --- | --- |
+        | PENDING / QUEUED / STARTED / RUNNING | In progress |
+        | COMPLETED / SUCCEEDED | All nodes finished |
+        | FAILED | A node failed; later nodes did not run |
+        | CANCELLED | Cancelled with **Cancel DAG Run** |
+
+        | Node `jobMappings[].status` | Meaning |
+        | --- | --- |
+        | NOT_EXECUTED | Skipped (upstream of `startFromNodeId`) |
+        | PENDING | Waiting for upstream nodes |
+        | IN_PROGRESS | Pipeline job running (`jobId` is set) |
+        | COMPLETED / FAILED / CANCELLED | Finished |
+    put:
+      summary: Cancel DAG Run
+      security:
+        - bearerAuth: [ ]
+      tags:
+        - DAGs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - CANCELLED
+            example:
+              status: CANCELLED
+      responses:
+        '200':
+          description: The run after the update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DagRun'
+      description: |
+        ## 1️⃣ Overview
+
+        **Purpose:**
+        Cancels a run that is still in progress. The currently running pipeline job is cancelled and the remaining nodes do not run.
+
+        ---
+
+        ## 2️⃣ Endpoint
+
+        ``` bash
+        PUT /orchestration/api/v1/dags/{dagId}/runs/{runId}
+        ```
+
+        ---
+
+        ## 3️⃣ Request Body
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | status | enum | ✅ Yes | `CANCELLED` — the only supported change |
+
+        ---
+
+        ## 4️⃣ Example Request
+
+        ``` bash
+        curl -X PUT 'https://be.datagol.ai/orchestration/api/v1/dags/42/runs/3301' \
+        -H "Authorization: Bearer <token>" \
+        -H "Content-Type: application/json" \
+        -d '{ "status": "CANCELLED" }'
+        ```
+
+        ---
+
+        ## 5️⃣ Behavior Summary
+
+        ```
+        Only runs in QUEUED, PENDING, RUNNING or STARTED can be cancelled; otherwise the run is returned unchanged.
+        A pipeline that is still initializing cannot be cancelled yet — retry after a few seconds.
+        ```

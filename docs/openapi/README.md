@@ -14,6 +14,9 @@ Endpoints are grouped by tag for docs and flow:
 | **AI Extraction** | Schema generation, extraction configs, and run triggers |
 | **WorkBook** | Tables (workbooks), columns, rows, and data operations |
 | **Knowledge Graph** | File upload, folder listing, and knowledge graph APIs |
+| **Data Sources** | Connect databases and SaaS apps, browse tables and columns, schema sync, descriptions, files |
+| **Data Pipelines** | Create, run and monitor SQL/Python pipelines and their jobs |
+| **DAGs** | Orchestrate pipelines as a dependency graph: nodes, edges and runs |
 
 ## Using the shared full spec (8589 lines)
 
